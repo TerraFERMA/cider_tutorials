@@ -12,7 +12,7 @@
   <simulations>
     <simulation name="DrivenCavity">
       <input_file>
-        <string_value lines="1" type="filename">driven_cavity/simple/driven_cavity.tfml</string_value>
+        <string_value lines="1" type="filename">driven_cavity/freeslip/driven_cavity.tfml</string_value>
       </input_file>
       <run_when name="input_changed_or_output_missing"/>
       <parameter_sweep>
@@ -84,7 +84,7 @@ for dmu in vtudata.parameters['dmu']:
   plt.xlabel('x')
   plt.ylabel('y')
   plt.title('velocity (dmu = {})'.format(dmu), y=1.05)
-  fig.savefig("driven_cavity_simple_dmu_{}.png".format(dmu))
+  fig.savefig("driven_cavity_freeslip_dmu_{}.png".format(dmu))
 
 havedisplay = "DISPLAY" in os.environ
 if not havedisplay:
