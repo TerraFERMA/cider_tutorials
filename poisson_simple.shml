@@ -1,0 +1,86 @@
+<?xml version='1.0' encoding='utf-8'?>
+<harness_options>
+  <length>
+    <string_value lines="1">short</string_value>
+  </length>
+  <owner>
+    <string_value lines="1">cwilson</string_value>
+  </owner>
+  <description>
+    <string_value lines="1">A simple setup of instantaneous heat diffusion in a unit square.</string_value>
+  </description>
+  <simulations>
+    <simulation name="Poisson">
+      <input_file>
+        <string_value type="filename" lines="1">poisson/simple/poisson.tfml</string_value>
+      </input_file>
+      <run_when name="input_changed_or_output_missing"/>
+      <parameter_sweep>
+        <parameter name="f">
+          <values>
+            <string_value lines="1">1.0</string_value>
+          </values>
+          <update>
+            <string_value type="code" lines="20" language="python">import libspud
+libspud.set_option("/system::Poisson/coefficient::f/type::Expression/rank::Scalar/value::WholeMesh/constant", float(f))</string_value>
+            <single_build/>
+          </update>
+        </parameter>
+      </parameter_sweep>
+      <variables>
+        <variable name="vtudata">
+          <string_value type="code" lines="20" language="python">import buckettools.vtktools as vtktools
+import os
+from lxml import etree
+from buckettools.threadlibspud import *
+from matplotlib.tri import Triangulation
+
+def lastvtuinpvd(filename):
+  assert(filename[-4:]==".pvd")
+  dirname = os.path.dirname(filename)
+  tree = etree.parse(filename)
+  vtunames = [[element.attrib['timestep'], os.path.join(dirname, element.attrib['file'])] for element in tree.getroot().iterdescendants(tag="DataSet")]
+  sortedvtunames = sorted(vtunames, key=lambda entry: float(entry[0]))
+  return sortedvtunames[-1][-1]
+
+filename = os.path.split(input_filename)[-1]
+threadlibspud.load_options(filename)
+basename = libspud.get_option("/io/output_base_name")
+threadlibspud.clear_options()
+vtufilename = lastvtuinpvd(basename+".pvd")
+vtu = vtktools.vtu(vtufilename)
+
+vtulocations = vtu.GetLocations()
+triangles = []
+for c in xrange(vtu.ugrid.GetNumberOfCells()):
+  points = vtu.GetCellPoints(c)
+  triangles.append(points)
+triang = Triangulation(vtulocations[:,0], vtulocations[:,1], triangles)
+
+u = vtu.GetScalarField("Poisson::u")
+
+vtudata = [triang, u]</string_value>
+        </variable>
+      </variables>
+    </simulation>
+  </simulations>
+  <tests>
+    <test name="plot">
+      <string_value type="code" lines="20" language="python">import matplotlib.pyplot as plt
+import numpy as np
+
+for f in vtudata.parameters['f']:
+  fig = plt.figure()
+  plt.tripcolor(vtudata[{'f':f}][0], vtudata[{'f':f}][1], shading="gouraud")
+  plt.gca().set_aspect('equal')
+  plt.xlabel('x')
+  plt.ylabel('y')
+  plt.title('temperature distribution with internal heating (magnitude = %s)'%(f), y=1.05)
+  cbar = plt.colorbar(ticks = np.linspace(min(vtudata[{'f':f}][1]), max(vtudata[{'f':f}][1]), 5))
+  fig.savefig("poisson_simple_f_%s.png"%(f))
+
+plt.show()
+</string_value>
+    </test>
+  </tests>
+</harness_options>
