@@ -12,7 +12,7 @@
   <simulations>
     <simulation name="Poisson">
       <input_file>
-        <string_value type="filename" lines="1">poisson/simple/poisson.tfml</string_value>
+        <string_value lines="1" type="filename">poisson/simple/poisson.tfml</string_value>
       </input_file>
       <run_when name="input_changed_or_output_missing"/>
       <parameter_sweep>
@@ -21,7 +21,7 @@
             <string_value lines="1">1.0</string_value>
           </values>
           <update>
-            <string_value type="code" lines="20" language="python">import libspud
+            <string_value lines="20" type="code" language="python">import libspud
 libspud.set_option("/system::Poisson/coefficient::f/type/rank/value/constant", float(f))</string_value>
             <single_build/>
           </update>
@@ -39,7 +39,7 @@ libspud.set_option("/system::Poisson/coefficient::k/type/rank/value/constant", f
       </parameter_sweep>
       <variables>
         <variable name="vtudata">
-          <string_value type="code" lines="20" language="python">import buckettools.vtktools as vtktools
+          <string_value lines="20" type="code" language="python">import buckettools.vtktools as vtktools
 import os
 from lxml import etree
 from buckettools.threadlibspud import *
@@ -71,12 +71,26 @@ u = vtu.GetScalarField("Poisson::u")
 
 vtudata = [triang, u]</string_value>
         </variable>
+        <variable name="errfile">
+          <string_value lines="20" type="code" language="python">err = file("terraferma.err-0", 'r')
+errfile = err.readlines()</string_value>
+        </variable>
       </variables>
     </simulation>
   </simulations>
   <tests>
+    <test name="errors">
+      <string_value lines="20" type="code" language="python">noerrors = True
+for f in errfile.parameters['f']:
+  for k in errfile.parameters['k']:
+    if len(errfile[{'f':f, 'k':k}]) &gt; 0:
+      print "ERROR: f = {}, k = {} produced an unexpected error!".format(f, k)
+      noerrors = False
+
+assert(noerrors)</string_value>
+    </test>
     <test name="plot">
-      <string_value type="code" lines="20" language="python">import matplotlib
+      <string_value lines="20" type="code" language="python">import matplotlib
 matplotlib.use('GTKAgg')
 import matplotlib.pyplot as plt
 import numpy as np
@@ -97,8 +111,7 @@ havedisplay = "DISPLAY" in os.environ
 if not havedisplay:
   exitval = os.system('python -c "import matplotlib; matplotlib.use(\'GTKAgg\'); import matplotlib.pyplot as plt; plt.figure()"')
   havedisplay = (exitval == 0)
-if havedisplay: plt.show()
-</string_value>
+if havedisplay: plt.show()</string_value>
     </test>
   </tests>
 </harness_options>
