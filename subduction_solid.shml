@@ -120,7 +120,7 @@ triang = Triangulation(vtulocations[:,0], vtulocations[:,1], triangles)
 T = vtu.GetScalarField("Solid::Temperature")
 v = vtu.GetField("Solid::Velocity")
 
-vtudata = [triang, u]</string_value>
+vtudata = [triang, vtulocations, T, v]</string_value>
         </variable>
         <variable name="errfile">
           <string_value lines="20" type="code" language="python">err = file("terraferma.err-0", 'r')
@@ -141,6 +141,37 @@ for delta in errfile.parameters['delta']:
         noerrors = False
 
 assert(noerrors)</string_value>
+    </test>
+    <test name="plot">
+      <string_value lines="20" type="code" language="python">import matplotlib
+matplotlib.use('GTKAgg')
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+
+e = 50.0
+for delta in errfile.parameters['delta']:
+  t = 300.
+  tx = t/np.tan(float(delta)*np.pi/180.)
+  for tslab in errfile.parameters['tslab']:
+    for tcrust in errfile.parameters['tcrust']:
+      index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust}
+      fig = plt.figure()
+      plt.tripcolor(vtudata[index][0], vtudata[index][2], shading="gouraud")
+      plt.gca().set_xlim([0, tx+e])
+      plt.gca().set_ylim([-tx, 0])
+      plt.gca().set_aspect('equal')
+      plt.xlabel('x')
+      plt.ylabel('y')
+      plt.title('temperature and velocity (delta = {}, tslab = {}, tcrust = {})'.format(delta, tslab, tcrust), y=1.05)
+      cbar = plt.colorbar(ticks = np.linspace(min(vtudata[index][2]), max(vtudata[index][2]), 5))
+      fig.savefig("subduction_solid_delta_{}_tslab_{}_tcrust_{}.png".format(delta, tslab, tcrust))
+
+havedisplay = "DISPLAY" in os.environ
+if not havedisplay:
+  exitval = os.system('python -c "import matplotlib; matplotlib.use(\'GTKAgg\'); import matplotlib.pyplot as plt; plt.figure()"')
+  havedisplay = (exitval == 0)
+if havedisplay: plt.show()</string_value>
     </test>
   </tests>
 </harness_options>
