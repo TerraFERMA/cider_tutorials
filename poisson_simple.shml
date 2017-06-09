@@ -91,7 +91,7 @@ assert(noerrors)</string_value>
     </test>
     <test name="plot">
       <string_value lines="20" type="code" language="python">import matplotlib
-matplotlib.use('GTKAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -109,7 +109,7 @@ for f in vtudata.parameters['f']:
 
 havedisplay = "DISPLAY" in os.environ
 if not havedisplay:
-  exitval = os.system('python -c "import matplotlib; matplotlib.use(\'GTKAgg\'); import matplotlib.pyplot as plt; plt.figure()"')
+  exitval = os.system('python -c "import matplotlib; matplotlib.use(\'Agg\'); import matplotlib.pyplot as plt; plt.figure()"')
   havedisplay = (exitval == 0)
 if havedisplay: plt.show()</string_value>
     </test>
