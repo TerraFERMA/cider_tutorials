@@ -18,7 +18,8 @@
       <parameter_sweep>
         <parameter name="delta">
           <values>
-            <string_value lines="1">45</string_value>
+            <string_value lines="1">45.0</string_value>
+            <comment>degrees</comment>
           </values>
           <update>
             <string_value lines="20" type="code" language="python">import libspud
@@ -32,6 +33,7 @@ libspud.set_option("/global_parameters/python", template(globalpython).safe_subs
         <parameter name="tslab">
           <values>
             <string_value lines="1">50.0</string_value>
+            <comment>Myr</comment>
           </values>
           <update>
             <string_value lines="20" type="code" language="python">import libspud
@@ -43,11 +45,27 @@ libspud.set_option("/system::Solid/coefficient::SlabAge/type/rank/value/constant
         <parameter name="tcrust">
           <values>
             <string_value lines="1">50.0</string_value>
+            <comment>Myr</comment>
           </values>
           <update>
             <string_value lines="20" type="code" language="python">import libspud
 
-libspud.set_option("/system::Solid/coefficient::SlabAge/type/rank/value/constant", float(tcrust)*1.e6*365*24*60*60)</string_value>
+libspud.set_option("/system::Solid/coefficient::CrustAge/type/rank/value/constant", float(tcrust)*1.e6*365*24*60*60)</string_value>
+            <single_build/>
+          </update>
+        </parameter>
+        <parameter name="vslab">
+          <values>
+            <string_value lines="1">0.05</string_value>
+            <comment>m/yr</comment>
+          </values>
+          <update>
+            <string_value lines="20" type="code" language="python">import libspud
+libspud.set_option("/system::Solid/coefficient::SolidVelocityScale/type/rank/value/constant", float(vslab)/365./24./60./60.)
+libspud.set_option("/timestepping/finish_time", 20.e6*float(vslab)/1000.) # run for 20 Myr
+libspud.set_option("/io/dump_periods/visualization_period", 1.e6*float(vslab)/1000.) # dump every 1 Myr
+libspud.set_option("/timestepping/timestep/adaptive/adapt_period", 20.e6*float(vslab)/1000.)
+libspud.set_option("/io/checkpointing/checkpoint_period", 5.e6*float(vslab)/1000.) # checkpoint every 5Ma</string_value>
             <single_build/>
           </update>
         </parameter>
@@ -126,6 +144,22 @@ vtudata = [triang, vtulocations, T, v]</string_value>
           <string_value lines="20" type="code" language="python">err = file("terraferma.err-0", 'r')
 errfile = err.readlines()</string_value>
         </variable>
+        <variable name="det">
+          <string_value lines="20" type="code" language="python">from buckettools.statfile import parser
+import os
+from buckettools.threadlibspud import *
+
+filename = os.path.split(input_filename)[-1]
+threadlibspud.load_options(filename)
+basename = libspud.get_option("/io/output_base_name")
+threadlibspud.clear_options()
+det = parser(basename+".det")</string_value>
+        </variable>
+        <variable name="havedisplay">
+          <string_value lines="20" type="code" language="python">import os
+
+havedisplay = "DISPLAY" in os.environ</string_value>
+        </variable>
       </variables>
     </simulation>
   </simulations>
@@ -135,43 +169,258 @@ errfile = err.readlines()</string_value>
 for delta in errfile.parameters['delta']:
   for tslab in errfile.parameters['tslab']:
     for tcrust in errfile.parameters['tcrust']:
-      index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust}
-      if len(errfile[index]) &gt; 0:
-        print "ERROR: delta = {}, tslab = {}, tcrust = {} produced an unexpected error!".format(delta, tslab, tcrust)
-        noerrors = False
+      for vslab in errfile.parameters['vslab']:
+        index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+        if len(errfile[index]) &gt; 0:
+          print "ERROR: delta = {}, tslab = {}, tcrust = {}, vslab = {} produced an unexpected error!".format(delta, tslab, tcrust, vslab)
+          noerrors = False
 
 assert(noerrors)</string_value>
     </test>
     <test name="plot">
       <string_value lines="20" type="code" language="python">import matplotlib
-matplotlib.use('GTKAgg')
+if havedisplay[0][0][0][0]: 
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 
 e = 50.0
-for delta in errfile.parameters['delta']:
+for delta in vtudata.parameters['delta']:
   t = 300.
   tx = t/np.tan(float(delta)*np.pi/180.)
-  for tslab in errfile.parameters['tslab']:
-    for tcrust in errfile.parameters['tcrust']:
-      index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust}
-      fig = plt.figure()
-      plt.tripcolor(vtudata[index][0], vtudata[index][2], shading="gouraud")
-      plt.gca().set_xlim([0, tx+e])
-      plt.gca().set_ylim([-tx, 0])
-      plt.gca().set_aspect('equal')
-      plt.xlabel('x')
-      plt.ylabel('y')
-      plt.title('temperature and velocity (delta = {}, tslab = {}, tcrust = {})'.format(delta, tslab, tcrust), y=1.05)
-      cbar = plt.colorbar(ticks = np.linspace(min(vtudata[index][2]), max(vtudata[index][2]), 5))
-      fig.savefig("subduction_solid_delta_{}_tslab_{}_tcrust_{}.png".format(delta, tslab, tcrust))
+  for tslab in vtudata.parameters['tslab']:
+    for tcrust in vtudata.parameters['tcrust']:
+      for vslab in vtudata.parameters['vslab']:
+        index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+        triang = vtudata[index][0]
+        x = vtudata[index][1]
+        T = vtudata[index][2]
+        v = vtudata[index][3]
+        vs0 = np.ma.masked_array(np.cos(float(delta)*np.pi/180.)*np.ones(x.shape[0]), (x[:,1] &gt; -np.tan(float(delta)*np.pi/180.)*x[:,0]))
+        vs1 = np.ma.masked_array(-np.sin(float(delta)*np.pi/180.)*np.ones(x.shape[0]), (x[:,1] &gt; -np.tan(float(delta)*np.pi/180.)*x[:,0]))
+        v0 = np.ma.masked_array(v[:,0], (x[:,1] &lt;= -np.tan(float(delta)*np.pi/180.)*x[:,0]))
+        v1 = np.ma.masked_array(v[:,1], (x[:,1] &lt;= -np.tan(float(delta)*np.pi/180.)*x[:,0]))
+        fig = plt.figure()
+        plt.tripcolor(triang, T, shading="gouraud")
+        cbar = plt.colorbar(ticks = np.linspace(0.0, 1.0, 5))
+        q = plt.quiver(x[:,0][::10], x[:,1][::10], v0[::10], v1[::10], linewidth=1, scale=10.0, color='w', edgecolor='w')
+        plt.quiverkey(q, 0.9, 0.9, 1, "vslab", labelpos='S', coordinates='figure', color='k')
+        plt.quiver(x[:,0][::10], x[:,1][::10], vs0[::10], vs1[::10], linewidth=1, scale=10.0, color='w', edgecolor='w')
+        plt.gca().set_xlim([0, tx+e])
+        plt.gca().set_ylim([-tx, 0])
+        plt.gca().set_aspect('equal', 'datalim')
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.title('temperature and velocity (delta = {}, tslab = {}, tcrust = {})'.format(delta, tslab, tcrust), y=1.05)
+        fig.savefig("subduction_solid_delta_{}_tslab_{}_tcrust_{}.png".format(delta, tslab, tcrust))</string_value>
+    </test>
+    <test name="slabprofile">
+      <string_value lines="20" type="code" language="python">import matplotlib
+if havedisplay[0][0][0][0]: 
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
+import os
 
-havedisplay = "DISPLAY" in os.environ
-if not havedisplay:
-  exitval = os.system('python -c "import matplotlib; matplotlib.use(\'GTKAgg\'); import matplotlib.pyplot as plt; plt.figure()"')
-  havedisplay = (exitval == 0)
-if havedisplay: plt.show()</string_value>
+if any([len(i)&gt;1 for i in det.parameters.itervalues()]):
+
+  if len(det.parameters['delta'])&gt;1:
+    for tslab in det.parameters['tslab']:
+      for tcrust in det.parameters['tcrust']:
+        for vslab in det.parameters['vslab']:
+          fig = plt.figure()
+          for delta in det.parameters['delta']:
+            index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+            y = det[index]["Slab"]["position_1"][:,-1]
+            T = det[index]["Solid"]["Temperature"]["Slab"][:,-1]
+            plt.plot(T, y, label="delta = {}".format(delta), linewidth=2)
+            plt.legend()
+            plt.xlabel('T')
+            plt.ylabel('y')
+            plt.gca().set_ylim(min(y), max(y))
+            plt.title('temperature along slab surface (tslab = {}, tcrust = {}, vslab = {})'.format(tslab, tcrust, vslab), y=1.05)
+          fig.savefig("subduction_solid_slab_temperature_delta_tslab_{}_tcrust_{}_vslab_{}.png".format(tslab, tcrust, vslab))
+    
+  if len(det.parameters['tslab'])&gt;1:
+    for delta in det.parameters['delta']:
+      for tcrust in det.parameters['tcrust']:
+        for vslab in det.parameters['vslab']:
+          fig = plt.figure()
+          for tslab in det.parameters['tslab']:
+            index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+            y = det[index]["Slab"]["position_1"][:,-1]
+            T = det[index]["Solid"]["Temperature"]["Slab"][:,-1]
+            plt.plot(T, y, label="tslab = {}".format(tslab), linewidth=2)
+            plt.legend()
+            plt.xlabel('T')
+            plt.ylabel('y')
+            plt.gca().set_ylim(min(y), max(y))
+            plt.title('temperature along slab surface (delta = {}, tcrust = {}, vslab = {})'.format(delta, tcrust, vslab), y=1.05)
+          fig.savefig("subduction_solid_slab_temperature_tslab_delta_{}_tcrust_{}_vslab_{}.png".format(delta, tcrust, vslab))
+    
+  if len(det.parameters['vslab'])&gt;1:
+    for delta in det.parameters['delta']:
+      for tslab in det.parameters['tslab']:
+        for tcrust in det.parameters['tcrust']:
+          fig = plt.figure()
+          for vslab in det.parameters['vslab']:
+            index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+            y = det[index]["Slab"]["position_1"][:,-1]
+            T = det[index]["Solid"]["Temperature"]["Slab"][:,-1]
+            plt.plot(T, y, label="vslab = {}".format(vslab), linewidth=2)
+            plt.legend()
+            plt.xlabel('T')
+            plt.ylabel('y')
+            plt.gca().set_ylim(min(y), max(y))
+            plt.title('temperature along slab surface (delta = {}, tslab = {}, tcrust = {})'.format(delta, tslab, tcrust), y=1.05)
+          fig.savefig("subduction_solid_slab_temperature_vslab_delta_{}_tslab_{}_tcrust_{}.png".format(delta, tslab, tcrust))
+    
+  if len(det.parameters['tcrust'])&gt;1:
+    for delta in det.parameters['delta']:
+      for tslab in det.parameters['tslab']:
+        for vslab in det.parameters['vslab']:
+          fig = plt.figure()
+          for tcrust in det.parameters['tcrust']:
+            index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+            y = det[index]["Slab"]["position_1"][:,-1]
+            T = det[index]["Solid"]["Temperature"]["Slab"][:,-1]
+            plt.plot(T, y, label="tcrust = {}".format(tcrust), linewidth=2)
+            plt.legend()
+            plt.xlabel('T')
+            plt.ylabel('y')
+            plt.gca().set_ylim(min(y), max(y))
+            plt.title('temperature along slab surface (delta = {}, tslab = {}, vslab = {})'.format(delta, tslab, vslab), y=1.05)
+          fig.savefig("subduction_solid_slab_temperature_tcrust_delta_{}_tslab_{}_vslab_{}.png".format(delta, tslab, vslab))
+else:
+  delta = det.parameters["delta"][0]
+  tslab = det.parameters["tslab"][0]
+  tcrust = det.parameters["tcrust"][0]
+  vslab = det.parameters["vslab"][0]
+  fig = plt.figure()
+  index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+  y = det[index]["Slab"]["position_1"][:,-1]
+  T = det[index]["Solid"]["Temperature"]["Slab"][:,-1]
+  plt.plot(T, y, linewidth=2)
+  plt.xlabel('T')
+  plt.ylabel('y')
+  plt.gca().set_ylim(min(y), max(y))
+  plt.title('temperature along slab surface (delta = {}, tslab = {}, tcrust = {}, vslab = {})'.format(delta, tslab, tcrust, vslab), y=1.05)
+  fig.savefig("subduction_solid_slab_temperature_delta_{}_tslab_{}_tcrust_{}_vslab_{}.png".format(delta, tslab, tcrust, vslab))
+</string_value>
+    </test>
+    <test name="verticalprofile">
+      <string_value lines="20" type="code" language="python">import matplotlib
+if havedisplay[0][0][0][0]: 
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+
+if any([len(i)&gt;1 for i in det.parameters.itervalues()]):
+
+  if len(det.parameters['delta'])&gt;1:
+    for tslab in det.parameters['tslab']:
+      for tcrust in det.parameters['tcrust']:
+        for vslab in det.parameters['vslab']:
+          fig = plt.figure()
+          for delta in det.parameters['delta']:
+            index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+            y = det[index]["Wedge"]["position_1"][:,-1]
+            T = det[index]["Solid"]["Temperature"]["Wedge"][:,-1]
+            plt.plot(T, y, label="delta = {}".format(delta), linewidth=2)
+            plt.legend()
+            plt.xlabel('T')
+            plt.ylabel('y')
+            plt.gca().set_ylim(min(y), max(y))
+            plt.title('temperature above 100km depth slab contour (tslab = {}, tcrust = {}, vslab = {})'.format(tslab, tcrust, vslab), y=1.05)
+          fig.savefig("subduction_solid_vertical_temperature_delta_tslab_{}_tcrust_{}_vslab_{}.png".format(tslab, tcrust, vslab))
+
+  if len(det.parameters['tslab'])&gt;1:
+    for delta in det.parameters['delta']:
+      for tcrust in det.parameters['tcrust']:
+        for vslab in det.parameters['vslab']:
+          fig = plt.figure()
+          for tslab in det.parameters['tslab']:
+            index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+            y = det[index]["Wedge"]["position_1"][:,-1]
+            T = det[index]["Solid"]["Temperature"]["Wedge"][:,-1]
+            plt.plot(T, y, label="tslab = {}".format(tslab), linewidth=2)
+            plt.legend()
+            plt.xlabel('T')
+            plt.ylabel('y')
+            plt.gca().set_ylim(min(y), max(y))
+            plt.title('temperature above 100km depth slab contour (delta = {}, tcrust = {}, vslab = {})'.format(delta, tcrust, vslab), y=1.05)
+          fig.savefig("subduction_solid_vertical_temperature_tslab_delta_{}_tcrust_{}_vslab_{}.png".format(delta, tcrust, vslab))
+
+  if len(det.parameters['vslab'])&gt;1:
+    for delta in det.parameters['delta']:
+      for tslab in det.parameters['tslab']:
+        for tcrust in det.parameters['tcrust']:
+          fig = plt.figure()
+          for vslab in det.parameters['vslab']:
+            index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+            y = det[index]["Wedge"]["position_1"][:,-1]
+            T = det[index]["Solid"]["Temperature"]["Wedge"][:,-1]
+            plt.plot(T, y, label="vslab = {}".format(vslab), linewidth=2)
+            plt.legend()
+            plt.xlabel('T')
+            plt.ylabel('y')
+            plt.gca().set_ylim(min(y), max(y))
+            plt.title('temperature above 100km depth slab contour (delta = {}, tslab = {}, tcrust = {})'.format(delta, tslab, tcrust), y=1.05)
+          fig.savefig("subduction_solid_vertical_temperature_vslab_delta_{}_tslab_{}_tcrust_{}.png".format(delta, tslab, tcrust))
+
+  if len(det.parameters['tcrust'])&gt;1:
+
+    for delta in det.parameters['delta']:
+      for tslab in det.parameters['tslab']:
+        for vslab in det.parameters['vslab']:
+          fig = plt.figure()
+          for tcrust in det.parameters['tcrust']:
+            index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+            y = det[index]["Wedge"]["position_1"][:,-1]
+            T = det[index]["Solid"]["Temperature"]["Wedge"][:,-1]
+            plt.plot(T, y, label="tcrust = {}".format(tcrust), linewidth=2)
+            plt.legend()
+            plt.xlabel('T')
+            plt.ylabel('y')
+            plt.gca().set_ylim(min(y), max(y))
+            plt.title('temperature above 100km depth slab contour (delta = {}, tslab = {}, vslab = {})'.format(delta, tslab, vslab), y=1.05)
+          fig.savefig("subduction_solid_vertical_temperature_tcrust_delta_{}_tslab_{}_vslab_{}.png".format(delta, tslab, vslab))
+
+else:
+  delta = det.parameters["delta"][0]
+  tslab = det.parameters["tslab"][0]
+  tcrust = det.parameters["tcrust"][0]
+  vslab = det.parameters["vslab"][0]
+  fig = plt.figure()
+  index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+  y = det[index]["Wedge"]["position_1"][:,-1]
+  T = det[index]["Solid"]["Temperature"]["Wedge"][:,-1]
+  plt.plot(T, y, linewidth=2)
+  plt.xlabel('T')
+  plt.ylabel('y')
+  plt.gca().set_ylim(min(y), max(y))
+  plt.title('temperature above 100km depth slab contour (delta = {}, tslab = {}, tcrust = {}, vslab = {})'.format(delta, tslab, tcrust, vslab), y=1.05)
+  fig.savefig("subduction_solid_vertical_temperature_delta_{}_tslab_{}_tcrust_{}_vslab_{}.png".format(delta, tslab, tcrust, vslab))
+</string_value>
+    </test>
+    <test name="display">
+      <string_value lines="20" type="code" language="python">import matplotlib
+if havedisplay[0][0][0][0]: 
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import os
+
+if havedisplay[0][0][0][0]: plt.show()</string_value>
     </test>
   </tests>
 </harness_options>
