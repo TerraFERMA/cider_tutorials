@@ -18,7 +18,7 @@
       <parameter_sweep>
         <parameter name="delta">
           <values>
-            <string_value lines="1">45.0</string_value>
+            <string_value lines="1">30.0 45.0</string_value>
             <comment>degrees</comment>
           </values>
           <update>
@@ -32,7 +32,7 @@ libspud.set_option("/global_parameters/python", template(globalpython).safe_subs
         </parameter>
         <parameter name="tslab">
           <values>
-            <string_value lines="1">50.0</string_value>
+            <string_value lines="1">20.0 50.0</string_value>
             <comment>Myr</comment>
           </values>
           <update>
@@ -44,7 +44,7 @@ libspud.set_option("/system::Solid/coefficient::SlabAge/type/rank/value/constant
         </parameter>
         <parameter name="tcrust">
           <values>
-            <string_value lines="1">50.0</string_value>
+            <string_value lines="1">20.0 50.0</string_value>
             <comment>Myr</comment>
           </values>
           <update>
@@ -56,7 +56,7 @@ libspud.set_option("/system::Solid/coefficient::CrustAge/type/rank/value/constan
         </parameter>
         <parameter name="vslab">
           <values>
-            <string_value lines="1">0.05</string_value>
+            <string_value lines="1">0.02 0.05 0.1</string_value>
             <comment>m/yr</comment>
           </values>
           <update>
