@@ -38,7 +38,6 @@ RUN apt-get update && \
     apt-get -y --with-new-pkgs \
         -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" upgrade && \
     apt-get -y install \
-                       wget \
                        eog && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -46,7 +45,7 @@ RUN apt-get update && \
 USER tfuser
 WORKDIR $TF_HOME
 
-# install CIDER tutorials
+# install and build the CIDER tutorials
 RUN export PYTHONPATH=$TF_PREFIX/lib/python2.7/site-packages:$FENICS_PREFIX/lib/python2.7/site-packages && \
     export PATH=$TF_PREFIX/bin:$FENICS_PREFIX/bin:$PATH && \
     export LD_LIBRARY_PATH=$FENICS_PREFIX/lib:$LD_LIBRARY_PATH && \
@@ -60,17 +59,9 @@ RUN export PYTHONPATH=$TF_PREFIX/lib/python2.7/site-packages:$FENICS_PREFIX/lib/
     tfsimulationharness --build *.shml
 
 # run the complete CIDER tutorials (this will take a while!)
-RUN export PYTHONPATH=$TF_PREFIX/lib/python2.7/site-packages:$FENICS_PREFIX/lib/python2.7/site-packages && \
-    export PATH=$TF_PREFIX/bin:$FENICS_PREFIX/bin:$PATH && \
-    export LD_LIBRARY_PATH=$FENICS_PREFIX/lib:$LD_LIBRARY_PATH && \
-    export PETSC_DIR=$PETSC_PREFIX && \
-    export PKG_CONFIG_PATH=$FENICS_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH && \
-    export DIAMOND_CONFIG_PATH=$TF_PREFIX/share/buckettools/diamond:$DIAMOND_CONFIG_PATH && \
-    export CMAKE_MODULE_PATH=$TF_PREFIX/share/buckettools/cmake/modules:$CMAKE_MODULE_PATH && \
-    export TF_CMAKE_PATH=$TF_PREFIX/share/terraferma/cpp && \
-    git clone -b suite -q https://github.com/TerraFERMA/cider_tutorials.git cider_tutorials.examples && \
-    cd cider_tutorials.examples && \
-    tfsimulationharness --run *.shml
+RUN curl -s -o cider_tutorials.examples.tar.gz -L "https://www.dropbox.com/s/2zqgsk262n6bhoo/cider_tutorials.examples.tar.gz?dl=0" && \
+    tar -xzf cider_tutorials.examples.tar.gz && \
+    rm cider_tutorials.examples.tar.gz
 
 USER root
 
