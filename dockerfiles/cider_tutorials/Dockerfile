@@ -46,15 +46,6 @@ RUN apt-get update && \
 USER tfuser
 WORKDIR $TF_HOME
 
-# install paraview
-RUN mkdir downloads && \
-    cd downloads && \
-    wget -q -O paraview.tar.gz "https://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v5.0&type=binary&os=linux64&downloadFile=ParaView-5.0.1-Qt4-OpenGL2-MPI-Linux-64bit.tar.gz" && \
-    tar -xzf paraview.tar.gz && \
-    rm paraview.tar.gz
-COPY bash.set-path $TF_HOME/.bash.set-paraview-path
-RUN cat $TF_HOME/.bash.set-paraview-path >> $TF_HOME/.profile
-
 # install CIDER tutorials
 RUN export PYTHONPATH=$TF_PREFIX/lib/python2.7/site-packages:$FENICS_PREFIX/lib/python2.7/site-packages && \
     export PATH=$TF_PREFIX/bin:$FENICS_PREFIX/bin:$PATH && \
