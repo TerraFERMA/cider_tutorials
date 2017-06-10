@@ -214,8 +214,8 @@ for delta in vtudata.parameters['delta']:
         plt.gca().set_aspect('equal', 'datalim')
         plt.xlabel('x')
         plt.ylabel('y')
-        plt.title('temperature and velocity (delta = {}, tslab = {}, tcrust = {})'.format(delta, tslab, tcrust), y=1.05)
-        fig.savefig("subduction_solid_delta_{}_tslab_{}_tcrust_{}.png".format(delta, tslab, tcrust))</string_value>
+        plt.title('temperature and velocity (delta = {}, tslab = {}, tcrust = {}, vslab = {})'.format(delta, tslab, tcrust, vslab), y=1.05)
+        fig.savefig("subduction_solid_delta_{}_tslab_{}_tcrust_{}_vslab_{}.png".format(delta, tslab, tcrust, vslab))</string_value>
     </test>
     <test name="slabprofile">
       <string_value lines="20" type="code" language="python">import matplotlib
@@ -310,8 +310,7 @@ else:
   plt.ylabel('y')
   plt.gca().set_ylim(min(y), max(y))
   plt.title('temperature along slab surface (delta = {}, tslab = {}, tcrust = {}, vslab = {})'.format(delta, tslab, tcrust, vslab), y=1.05)
-  fig.savefig("subduction_solid_slab_temperature_delta_{}_tslab_{}_tcrust_{}_vslab_{}.png".format(delta, tslab, tcrust, vslab))
-</string_value>
+  fig.savefig("subduction_solid_slab_temperature_delta_{}_tslab_{}_tcrust_{}_vslab_{}.png".format(delta, tslab, tcrust, vslab))</string_value>
     </test>
     <test name="verticalprofile">
       <string_value lines="20" type="code" language="python">import matplotlib
@@ -408,8 +407,28 @@ else:
   plt.ylabel('y')
   plt.gca().set_ylim(min(y), max(y))
   plt.title('temperature above 100km depth slab contour (delta = {}, tslab = {}, tcrust = {}, vslab = {})'.format(delta, tslab, tcrust, vslab), y=1.05)
-  fig.savefig("subduction_solid_vertical_temperature_delta_{}_tslab_{}_tcrust_{}_vslab_{}.png".format(delta, tslab, tcrust, vslab))
+  fig.savefig("subduction_solid_vertical_temperature_delta_{}_tslab_{}_tcrust_{}_vslab_{}.png".format(delta, tslab, tcrust, vslab))</string_value>
+    </test>
+    <test name="slabtemperature100">
+      <string_value lines="20" type="code" language="python">print "non-dimensional slab temperature at 100km depth:"
+for delta in det.parameters['delta']:
+  for tslab in det.parameters['tslab']:
+    for tcrust in det.parameters['tcrust']:
+      for vslab in det.parameters['vslab']:
+        index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+        print "  {} (delta = {}, tslab = {}, tcrust ={}, vslab = {})".format(det[index]["Solid"]["Temperature"]["Wedge"][-11,-1], delta, tslab, tcrust, vslab)
+
 </string_value>
+    </test>
+    <test name="maxwedgetemperature100">
+      <string_value lines="20" type="code" language="python">print "maximum non-dimensional temperature in wedge above 100km slab contour:"
+for delta in det.parameters['delta']:
+  for tslab in det.parameters['tslab']:
+    for tcrust in det.parameters['tcrust']:
+      for vslab in det.parameters['vslab']:
+        index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab}
+        j = det[index]["Solid"]["Temperature"]["Wedge"][:-10,-1].argmax()
+        print "  Tmax = {}, y = {} (delta = {}, tslab = {}, tcrust ={}, vslab = {})".format(det[index]["Solid"]["Temperature"]["Wedge"][j,-1], det[index]["Wedge"]["position_1"][j,-1], delta, tslab, tcrust, vslab)</string_value>
     </test>
     <test name="display">
       <string_value lines="20" type="code" language="python">import matplotlib
