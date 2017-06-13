@@ -1,3 +1,0 @@
-
-export PATH=$TF_HOME/downloads/ParaView-5.0.1-Qt4-OpenGL2-MPI-Linux-64bit/bin:$PATH
-
