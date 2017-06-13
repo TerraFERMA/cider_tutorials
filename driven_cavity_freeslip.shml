@@ -35,7 +35,7 @@ libspud.set_option("/system::Stokes/coefficient::ViscosityJumpFactor/type/rank/v
         </parameter>
         <parameter name="ncells">
           <values>
-            <string_value lines="1">32</string_value>
+            <string_value lines="1">16 32 64</string_value>
           </values>
         </parameter>
       </parameter_sweep>
