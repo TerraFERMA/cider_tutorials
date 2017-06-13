@@ -45,6 +45,9 @@ RUN apt-get update && \
 USER tfuser
 WORKDIR $TF_HOME
 
+# set some useful aliases
+COPY bash_aliases $TF_HOME/.bash_aliases
+
 # install and build the CIDER tutorials
 RUN export PYTHONPATH=$TF_PREFIX/lib/python2.7/site-packages:$FENICS_PREFIX/lib/python2.7/site-packages && \
     export PATH=$TF_PREFIX/bin:$FENICS_PREFIX/bin:$PATH && \

@@ -81,7 +81,7 @@ overriding crust.  Simulations are run for 20Myr.
   * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
 
   Outputs:
-  * plot(s) of the non-dimensional temperature and velocity solutions
+  * plot(s) of the re-dimensionalized temperature and velocity solutions
   * plot(s) of the temperature at the slab surface as a function of depth
   * plot(s) of the temperature in the wedge as a function of depth above the 100km contour of the slab surface
   * print out of the temperature at the 100km contour of the slab surface
