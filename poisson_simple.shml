@@ -32,7 +32,29 @@ libspud.set_option("/system::Poisson/coefficient::f/type/rank/value/constant", f
           </values>
           <update>
             <string_value lines="20" type="code" language="python">import libspud
+
+if float(k) &lt;= 0.0:
+  import sys
+  print "ERROR: k must be greater than 0!"
+  sys.exit(1)
+
 libspud.set_option("/system::Poisson/coefficient::k/type/rank/value/constant", float(k))</string_value>
+            <single_build/>
+          </update>
+        </parameter>
+        <parameter name="ncells">
+          <values>
+            <string_value lines="1">32</string_value>
+          </values>
+          <update>
+            <string_value lines="20" type="code" language="python">import libspud
+
+if int(ncells) &lt;= 0:
+  import sys
+  print "ERROR: ncells must be greater than 0!"
+  sys.exit(1)
+
+libspud.set_option("/geometry/mesh::Mesh/source/number_cells", [int(ncells), int(ncells)])</string_value>
             <single_build/>
           </update>
         </parameter>
@@ -81,6 +103,22 @@ errfile = err.readlines()</string_value>
 exitval = os.system('python -c "import matplotlib.pyplot as plt; plt.figure()"')
 havedisplay = (exitval == 0) and "DISPLAY" in os.environ</string_value>
         </variable>
+        <variable name="ustats">
+          <string_value lines="20" type="code" language="python">from buckettools.statfile import parser
+from buckettools.threadlibspud import *
+import os
+
+filename = os.path.split(input_filename)[-1]
+threadlibspud.load_options(filename)
+basename = libspud.get_option("/io/output_base_name")
+threadlibspud.clear_options()
+stat = parser(basename+".stat")
+
+umax = stat["Poisson"]["u"]["max"][-1]
+uint = stat["Poisson"]["integral"]["functional_value"][-1]
+
+ustats = [umax, uint]</string_value>
+        </variable>
       </variables>
     </simulation>
   </simulations>
@@ -89,15 +127,25 @@ havedisplay = (exitval == 0) and "DISPLAY" in os.environ</string_value>
       <string_value lines="20" type="code" language="python">noerrors = True
 for f in errfile.parameters['f']:
   for k in errfile.parameters['k']:
-    if len(errfile[{'f':f, 'k':k}]) &gt; 0:
-      print "ERROR: f = {}, k = {} produced an unexpected error!".format(f, k)
-      noerrors = False
+    for ncells in errfile.parameters['ncells']:
+      if len(errfile[{'f':f, 'k':k, 'ncells':ncells}]) &gt; 0:
+        print "ERROR: f = {}, k = {}, ncells = {} produced an unexpected error!".format(f, k, ncells)
+        noerrors = False
 
 assert(noerrors)</string_value>
     </test>
+    <test name="ustats">
+      <string_value lines="20" type="code" language="python">for f in ustats.parameters['f']:
+  for k in ustats.parameters['k']:
+    for ncells in ustats.parameters['ncells']:
+      index = {'f':f, 'k':k, 'ncells': ncells}
+      print "f = {}, k = {}, ncells = {}:".format(f, k, ncells)
+      print "  max = {}".format(ustats[index][0])
+      print "  integral = {}".format(ustats[index][1])</string_value>
+    </test>
     <test name="plot">
       <string_value lines="20" type="code" language="python">import matplotlib
-if havedisplay[0][0]: 
+if havedisplay[0][0][0]: 
   matplotlib.use('GTKAgg')
 else:
   matplotlib.use('Agg')
@@ -107,16 +155,18 @@ import os
 
 for f in vtudata.parameters['f']:
   for k in vtudata.parameters['k']:
-    fig = plt.figure()
-    plt.tripcolor(vtudata[{'f':f, 'k':k}][0], vtudata[{'f':f, 'k':k}][1], shading="gouraud")
-    plt.gca().set_aspect('equal')
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.title('temperature distribution (f = {}, k = {})'.format(f, k), y=1.05)
-    cbar = plt.colorbar(ticks = np.linspace(min(vtudata[{'f':f, 'k':k}][1]), max(vtudata[{'f':f, 'k':k}][1]), 5))
-    fig.savefig("poisson_simple_f_{}_k_{}.png".format(f, k))
+    for ncells in vtudata.parameters['ncells']:
+      index = {'f':f, 'k':k, 'ncells': ncells}
+      fig = plt.figure()
+      plt.tripcolor(vtudata[index][0], vtudata[index][1], shading="gouraud")
+      plt.gca().set_aspect('equal')
+      plt.xlabel('x')
+      plt.ylabel('y')
+      plt.title('temperature distribution (f = {}, k = {}, ncells = {})'.format(f, k, ncells), y=1.05)
+      cbar = plt.colorbar(ticks = np.linspace(min(vtudata[index][1]), max(vtudata[index][1]), 5))
+      fig.savefig("poisson_simple_f_{}_k_{}_ncells_{}.png".format(f, k, ncells))
 
-if havedisplay[0][0]: plt.show()</string_value>
+if havedisplay[0][0][0]: plt.show()</string_value>
     </test>
   </tests>
 </harness_options>

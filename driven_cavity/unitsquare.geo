@@ -1,3 +1,5 @@
+ncells = ${ncells};
+
 Point(1) = {0, 0, 0, 1.0};
 Extrude {1, 0, 0} {
   Point{1};
@@ -9,13 +11,13 @@ Extrude {0, 0.5, 0} {
   Line{2};
 }
 
-Transfinite Line {3} = 16+1 Using Progression 1;
-Transfinite Line {7} = 16+1 Using Progression 1;
-Transfinite Line {4} = 16+1 Using Progression 1;
-Transfinite Line {8} = 16+1 Using Progression 1;
-Transfinite Line {1} = 32+1 Using Progression 1;
-Transfinite Line {2} = 32+1 Using Progression 1;
-Transfinite Line {6} = 32+1 Using Progression 1;
+Transfinite Line {3} = ncells/2+1 Using Progression 1;
+Transfinite Line {7} = ncells/2+1 Using Progression 1;
+Transfinite Line {4} = ncells/2+1 Using Progression 1;
+Transfinite Line {8} = ncells/2+1 Using Progression 1;
+Transfinite Line {1} = ncells+1 Using Progression 1;
+Transfinite Line {2} = ncells+1 Using Progression 1;
+Transfinite Line {6} = ncells+1 Using Progression 1;
 
 Transfinite Surface {5} Alternated;
 Transfinite Surface {9} Alternated;

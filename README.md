@@ -28,10 +28,12 @@ Available input files include:
 
   * `k` - non-dimensional diffusion coefficient (default = 1)
   * `f` - non-dimensional heat source (default = 1)
+  * `ncells` - number of cells in each dimension of the unit square (default = 32)
 
   Outputs:
 
   * plot of the non-dimensional temperature solution
+  * print out of the maximum and integral of the non-dimensional temperature
 
 * `driven_cavity_freeslip.shml`
    
@@ -41,6 +43,7 @@ everywhere except at the top of the domain where shear is driven tangential to t
   Available parameters are:
 
   * `dmu` - viscosity jump factor in the lower half of the domain (default = 1, no jump in viscosity)
+  * `ncells` - number of cells in each dimension of the unit square (default = 32)
 
   Outputs:
 
@@ -55,6 +58,7 @@ everywhere except at the top of the domain where shear is driven tangential to t
   Available parameters are:
 
   * `dmu` - viscosity jump factor in the lower half of the domain (default = 1, no jump in viscosity)
+  * `ncells` - number of cells in each dimension of the unit square (default = 32)
 
   Outputs:
 
@@ -74,6 +78,7 @@ overriding crust.  Simulations are run for 20Myr.
   * `tslab` - age of the incoming slab in Myr (default =  50Myr)
   * `tcrust` - age of the overriding crust in Myr (default = 50Myr)
   * `vslab` - convergence rate of slab and crust in m/yr (default = 0.05m/yr)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
 
   Outputs:
   * plot(s) of the non-dimensional temperature and velocity solutions

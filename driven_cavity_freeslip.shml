@@ -22,9 +22,21 @@
           </values>
           <update>
             <string_value lines="20" type="code" language="python">import libspud
+
+if float(dmu) &lt;= 0.0:
+  import sys
+  print "ERROR: dmu must be greater than 0!"
+  sys.exit(1)
+
+
 libspud.set_option("/system::Stokes/coefficient::ViscosityJumpFactor/type/rank/value/constant", float(dmu))</string_value>
             <single_build/>
           </update>
+        </parameter>
+        <parameter name="ncells">
+          <values>
+            <string_value lines="1">32</string_value>
+          </values>
         </parameter>
       </parameter_sweep>
       <dependencies>
@@ -33,6 +45,20 @@ libspud.set_option("/system::Stokes/coefficient::ViscosityJumpFactor/type/rank/v
             <string_value lines="1" type="filename">driven_cavity/unitsquare.geo</string_value>
           </input_file>
           <run_when name="input_changed_or_output_missing"/>
+          <parameter_sweep>
+            <parameter name="ncells">
+              <update>
+                <string_value lines="20" type="code" language="python">from string import Template as template
+
+if int(ncells) &lt;= 0:
+  import sys
+  print "ERROR: ncells must be greater than 0!"
+  sys.exit(1)
+
+input_file = template(input_file).safe_substitute({'ncells':ncells})</string_value>
+              </update>
+            </parameter>
+          </parameter_sweep>
           <required_output>
             <filenames name="Mesh">
               <string>
@@ -122,22 +148,25 @@ havedisplay = (exitval == 0) and "DISPLAY" in os.environ</string_value>
     <test name="errors">
       <string_value lines="20" type="code" language="python">noerrors = True
 for dmu in errfile.parameters['dmu']:
-  if len(errfile[{'dmu':dmu}]) &gt; 0:
-    print "ERROR: dmu = {} produced an unexpected error!".format(dmu)
-    noerrors = False
+  for ncells in errfile.parameters['ncells']:
+    if len(errfile[{'dmu':dmu, 'ncells':ncells}]) &gt; 0:
+      print "ERROR: dmu = {}, ncells produced an unexpected error!".format(dmu, ncells)
+      noerrors = False
 
 assert(noerrors)</string_value>
     </test>
     <test name="rmsvelocities">
       <string_value lines="20" type="code" language="python">for dmu in rmsvelocities.parameters['dmu']:
-  print "dmu = {}:".format(dmu)
-  print "  rms velocity = {}".format(rmsvelocities[{'dmu':dmu}][0])
-  print "  rms velocity upper = {}".format(rmsvelocities[{'dmu':dmu}][1])
-  print "  rms velocity lower = {}".format(rmsvelocities[{'dmu':dmu}][2])</string_value>
+  for ncells in rmsvelocities.parameters['ncells']:
+    index = {'dmu':dmu, 'ncells':ncells}
+    print "dmu = {}, ncells = {}:".format(dmu, ncells)
+    print "  rms velocity = {}".format(rmsvelocities[index][0])
+    print "  rms velocity upper = {}".format(rmsvelocities[index][1])
+    print "  rms velocity lower = {}".format(rmsvelocities[index][2])</string_value>
     </test>
     <test name="plot">
       <string_value lines="20" type="code" language="python">import matplotlib
-if havedisplay[0]: 
+if havedisplay[0][0]: 
   matplotlib.use('GTKAgg')
 else:
   matplotlib.use('Agg')
@@ -146,17 +175,19 @@ import numpy as np
 import os
 
 for dmu in vtudata.parameters['dmu']:
-  x = vtudata[{'dmu':dmu}][1]
-  v = vtudata[{'dmu':dmu}][2]
-  fig = plt.figure()
-  plt.quiver(x[:,0], x[:,1], v[:,0], v[:,1], linewidth=1, scale=10.0)
-  plt.gca().set_aspect('equal')
-  plt.xlabel('x')
-  plt.ylabel('y')
-  plt.title('velocity (dmu = {})'.format(dmu), y=1.05)
-  fig.savefig("driven_cavity_freeslip_dmu_{}.png".format(dmu))
+  for ncells in vtudata.parameters['ncells']:
+    index = {'dmu':dmu, 'ncells':ncells}
+    x = vtudata[index][1]
+    v = vtudata[index][2]
+    fig = plt.figure()
+    plt.quiver(x[:,0], x[:,1], v[:,0], v[:,1], linewidth=1, scale=10.0)
+    plt.gca().set_aspect('equal')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.title('velocity (dmu = {}, ncells = {})'.format(dmu, ncells), y=1.05)
+    fig.savefig("driven_cavity_freeslip_dmu_{}_ncells_{}.png".format(dmu, ncells))
 
-if havedisplay[0]: plt.show()</string_value>
+if havedisplay[0][0]: plt.show()</string_value>
     </test>
   </tests>
 </harness_options>
