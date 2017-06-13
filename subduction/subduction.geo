@@ -1,8 +1,10 @@
-dx_scale = 1.0;
+mindx = ${mindx};
 
 dx_fine   = 2.0;
 dx_medium = 10.0;
 dx_coarse = 50.0;
+
+dx_scale = mindx/dx_fine;
 
 dx_fine   = dx_fine*dx_scale;
 dx_medium = dx_medium*dx_scale;
