@@ -87,7 +87,83 @@ overriding crust.  Simulations are run for 20Myr.
   * print out of the temperature at the 100km contour of the slab surface
   * print out of the maximum temperature (and its depth) in the wedge above the 100km contour of the slab surface
 
+* `subduction_benchmark1a.shml`
 
+  Solves subduction benchmark 1a from van Keken et al. (2008) [doi:10.1016/j.pepi.2008.04.015] for the temperature distribution in
+the wedge.
 
-   
+  Available parameters are:
+
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
+
+  Outputs:
+  * plot(s) of the re-dimensionalized temperature and velocity solutions
+  * plot(s) of the temperature at the slab surface as a function of depth
+  * print out of the temperature at the 60km contour of the slab surface (and compares to the benchmark result T_{11,11})
+  * print out of the integrated temperature along the slab (and compares to the benchmark result ||T_{slab}||)
+  * print out of the integrated temperature in the wedge (and compares to the benchmark result ||T_{wedge}||)
+
+* `subduction_benchmark1b.shml`
+
+  Solves subduction benchmark 1b from van Keken et al. (2008) [doi:10.1016/j.pepi.2008.04.015] for the temperature and velocity
+distributions in an isoviscous wedge with essential velocity boundary conditions.
+
+  Available parameters are:
+
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
+
+  Outputs:
+  * plot(s) of the re-dimensionalized temperature and velocity solutions
+  * plot(s) of the temperature at the slab surface as a function of depth
+  * print out of the temperature at the 60km contour of the slab surface (and compares to the benchmark result T_{11,11})
+  * print out of the integrated temperature along the slab (and compares to the benchmark result ||T_{slab}||)
+  * print out of the integrated temperature in the wedge (and compares to the benchmark result ||T_{wedge}||)
+
+* `subduction_benchmark1c.shml`
+
+  Solves subduction benchmark 1c from van Keken et al. (2008) [doi:10.1016/j.pepi.2008.04.015] for the temperature and velocity
+distributions in an isoviscous wedge with natural velocity boundary conditions on the wedge side.
+
+  Available parameters are:
+
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
+
+  Outputs:
+  * plot(s) of the re-dimensionalized temperature and velocity solutions
+  * plot(s) of the temperature at the slab surface as a function of depth
+  * print out of the temperature at the 60km contour of the slab surface (and compares to the benchmark result T_{11,11})
+  * print out of the integrated temperature along the slab (and compares to the benchmark result ||T_{slab}||)
+  * print out of the integrated temperature in the wedge (and compares to the benchmark result ||T_{wedge}||)
+
+* `subduction_benchmark2a.shml`
+
+  Solves subduction benchmark 2a from van Keken et al. (2008) [doi:10.1016/j.pepi.2008.04.015] for the temperature and velocity
+distributions in a diffusion creep rheology wedge with natural velocity boundary conditions on the wedge side.
+
+  Available parameters are:
+
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
+
+  Outputs:
+  * plot(s) of the re-dimensionalized temperature and velocity solutions
+  * plot(s) of the temperature at the slab surface as a function of depth
+  * print out of the temperature at the 60km contour of the slab surface (and compares to the benchmark result T_{11,11})
+  * print out of the integrated temperature along the slab (and compares to the benchmark result ||T_{slab}||)
+  * print out of the integrated temperature in the wedge (and compares to the benchmark result ||T_{wedge}||)
+
+* `subduction_benchmark2b.shml`
+
+  Solves subduction benchmark 2b from van Keken et al. (2008) [doi:10.1016/j.pepi.2008.04.015] for the temperature and velocity
+distributions in a dislocation creep rheology wedge with natural velocity boundary conditions on the wedge side.
+
+  Available parameters are:
+
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
+
+  Outputs:
+  * plot(s) of the re-dimensionalized temperature and velocity solutions
+  * plot(s) of the temperature at the slab surface as a function of depth
+  * print out of the temperature at the 60km contour of the slab surface (and compares to the benchmark result T_{11,11})
+  * print out of the integrated temperature along the slab (and compares to the benchmark result ||T_{slab}||)
+  * print out of the integrated temperature in the wedge (and compares to the benchmark result ||T_{wedge}||)
 

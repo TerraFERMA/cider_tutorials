@@ -1,0 +1,239 @@
+<?xml version='1.0' encoding='utf-8'?>
+<harness_options>
+  <length>
+    <string_value lines="1">medium</string_value>
+  </length>
+  <owner>
+    <string_value lines="1">cwilson</string_value>
+  </owner>
+  <description>
+    <string_value lines="1">A simple thermal subduction zone model.</string_value>
+  </description>
+  <simulations>
+    <simulation name="Solid">
+      <input_file>
+        <string_value lines="1" type="filename">subduction/benchmark/1a/subduction.tfml</string_value>
+      </input_file>
+      <run_when name="input_changed_or_output_missing"/>
+      <parameter_sweep>
+        <parameter name="mindx">
+          <values>
+            <string_value lines="1">2.0</string_value>
+            <comment>km</comment>
+          </values>
+        </parameter>
+      </parameter_sweep>
+      <dependencies>
+        <run name="Mesh">
+          <input_file>
+            <string_value lines="1" type="filename">subduction/benchmark/subduction.geo</string_value>
+          </input_file>
+          <run_when name="input_changed_or_output_missing"/>
+          <parameter_sweep>
+            <parameter name="mindx">
+              <update>
+                <string_value lines="20" type="code" language="python">from string import Template as template
+
+input_file = template(input_file).safe_substitute({"mindx":mindx})</string_value>
+              </update>
+            </parameter>
+          </parameter_sweep>
+          <required_output>
+            <filenames name="Mesh">
+              <string>
+                <string_value lines="1" type="filename">subduction.xml.gz</string_value>
+              </string>
+            </filenames>
+          </required_output>
+          <commands>
+            <command name="GMsh">
+              <string_value lines="1">gmsh -2 -algo del2d subduction.geo</string_value>
+            </command>
+            <command name="Convert">
+              <string_value lines="1">dolfin-convert subduction.msh subduction.xml</string_value>
+            </command>
+            <command name="GZip">
+              <string_value lines="1">gzip subduction.xml</string_value>
+            </command>
+          </commands>
+        </run>
+      </dependencies>
+      <variables>
+        <variable name="vtudata">
+          <string_value lines="20" type="code" language="python">import buckettools.vtktools as vtktools
+import os
+from lxml import etree
+from buckettools.threadlibspud import *
+from matplotlib.tri import Triangulation
+
+def lastvtuinpvd(filename):
+  assert(filename[-4:]==".pvd")
+  dirname = os.path.dirname(filename)
+  tree = etree.parse(filename)
+  vtunames = [[element.attrib['timestep'], os.path.join(dirname, element.attrib['file'])] for element in tree.getroot().iterdescendants(tag="DataSet")]
+  sortedvtunames = sorted(vtunames, key=lambda entry: float(entry[0]))
+  return sortedvtunames[-1][-1]
+
+filename = os.path.split(input_filename)[-1]
+threadlibspud.load_options(filename)
+basename = libspud.get_option("/io/output_base_name")
+T0 = libspud.get_option("/system::Solid/coefficient::BackgroundTemperature/type/rank/value/constant")
+Ts = libspud.get_option("/system::Solid/coefficient::SurfaceTemperature/type/rank/value/constant")
+threadlibspud.clear_options()
+vtufilename = lastvtuinpvd(basename+".pvd")
+vtu = vtktools.vtu(vtufilename)
+
+vtulocations = vtu.GetLocations()
+triangles = []
+for c in xrange(vtu.ugrid.GetNumberOfCells()):
+  points = vtu.GetCellPoints(c)
+  triangles.append(points)
+triang = Triangulation(vtulocations[:,0], vtulocations[:,1], triangles)
+
+T = vtu.GetScalarField("Solid::Temperature")*(T0-Ts)
+v = vtu.GetField("Solid::Velocity")
+
+vtudata = [triang, vtulocations, T, v, T0-Ts]</string_value>
+        </variable>
+        <variable name="errfile">
+          <string_value lines="20" type="code" language="python">err = file("terraferma.err-0", 'r')
+errfile = err.readlines()</string_value>
+        </variable>
+        <variable name="det">
+          <string_value lines="20" type="code" language="python">from buckettools.statfile import parser
+import os
+from buckettools.threadlibspud import *
+
+filename = os.path.split(input_filename)[-1]
+threadlibspud.load_options(filename)
+basename = libspud.get_option("/io/output_base_name")
+threadlibspud.clear_options()
+det = parser(basename+".det")</string_value>
+        </variable>
+        <variable name="havedisplay">
+          <string_value lines="20" type="code" language="python">import os
+
+exitval = os.system('python -c "import matplotlib.pyplot as plt; plt.figure()"')
+havedisplay = (exitval == 0) and "DISPLAY" in os.environ</string_value>
+        </variable>
+      </variables>
+    </simulation>
+  </simulations>
+  <tests>
+    <test name="errors">
+      <string_value lines="20" type="code" language="python">noerrors = True
+for mindx in errfile.parameters['mindx']:
+  index = {'mindx': mindx}
+  if len(errfile[index]) &gt; 0:
+    print "ERROR: mindx = {} produced an unexpected error!".format(mindx)
+    noerrors = False
+
+assert(noerrors)</string_value>
+    </test>
+    <test name="elapsedwalltime">
+      <string_value lines="20" type="code" language="python">print "elapsed simulation wall time:"
+for mindx in det.parameters['mindx']:
+  index = {'mindx':mindx}
+  print "  {} minutes (mindx = {} km)".format(det[index]["ElapsedWallTime"]["value"][-1]/60.0, mindx)</string_value>
+    </test>
+    <test name="plot">
+      <string_value lines="20" type="code" language="python">import matplotlib
+if havedisplay[0]:
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+
+e = 50.0
+t = 600.
+delta = 45.0
+vslab = 0.05
+tx = t/np.tan(45.0*np.pi/180.)
+for mindx in vtudata.parameters['mindx']:
+  index = {'mindx':mindx}
+  triang = vtudata[index][0]
+  x = vtudata[index][1]
+  T = vtudata[index][2]
+  v = vtudata[index][3]
+  vs0 = np.ma.masked_array(np.cos(float(delta)*np.pi/180.)*np.ones(x.shape[0]), (x[:,1] &gt; -np.tan(float(delta)*np.pi/180.)*x[:,0]))
+  vs1 = np.ma.masked_array(-np.sin(float(delta)*np.pi/180.)*np.ones(x.shape[0]), (x[:,1] &gt; -np.tan(float(delta)*np.pi/180.)*x[:,0]))
+  v0 = np.ma.masked_array(v[:,0], ((x[:,1] &lt;= -np.tan(float(delta)*np.pi/180.)*x[:,0]) ^ (x[:,1] &gt; -50.0)))
+  v1 = np.ma.masked_array(v[:,1], ((x[:,1] &lt;= -np.tan(float(delta)*np.pi/180.)*x[:,0]) ^ (x[:,1] &gt; -50.0)))
+  fig = plt.figure()
+  plt.tripcolor(triang, T, shading="gouraud")
+  cbar = plt.colorbar(ticks = np.linspace(0.0, vtudata[index][4], 5))
+  cbar.ax.set_ylabel(r'temperature ($^\circ C$)')
+  stride = max(len(v0)/500, 1)
+  q = plt.quiver(x[:,0][::stride], x[:,1][::stride], v0[::stride], v1[::stride], width=2, units='x', scale_units='x', scale=0.002/float(vslab), color='w', edgecolor='w')
+  plt.quiverkey(q, 0.9, 0.9, 1, `vslab`+"m/yr", labelpos='S', coordinates='figure', color='k')
+  plt.quiver(x[:,0][::stride], x[:,1][::stride], vs0[::stride], vs1[::stride], width=2, units='x', scale_units='x', scale=0.002/float(vslab), color='w', edgecolor='w')
+  plt.gca().set_xlim([0, tx+e])
+  plt.gca().set_ylim([-tx, 0])
+  plt.gca().set_aspect('equal', 'datalim')
+  plt.xlabel(r'x ($km$)')
+  plt.ylabel(r'y ($km$)')
+  plt.title(r'temperature ($^\circ C$) and velocity (mindx = {})'.format(mindx), y=1.05)
+  fig.savefig("subduction_benchmark1a_mindx_{}.png".format(mindx))</string_value>
+    </test>
+    <test name="slabprofile">
+      <string_value lines="20" type="code" language="python">import matplotlib
+if havedisplay[0]: 
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+
+fig = plt.figure()
+for mindx in det.parameters['mindx']:
+  index = {'mindx':mindx}
+  y = det[index]["Slab"]["position_1"][:,-1]
+  T = det[index]["Solid"]["Temperature"]["Slab"][:,-1]*vtudata[index][4]
+  plt.plot(T, y, label="mindx = {}".format(mindx), linewidth=2)
+  plt.legend()
+  plt.xlabel(r'T ($^\circ C$)')
+  plt.ylabel(r'y ($km$)')
+  plt.gca().set_ylim(min(y), max(y))
+  plt.title(r'temperature ($^\circ C$) along slab surface', y=1.05)
+fig.savefig("subduction_benchmark1a_slab_temperature.png")</string_value>
+    </test>
+    <test name="Tslab60">
+      <string_value lines="20" type="code" language="python">print "T_{11,11}:"
+for mindx in det.parameters['mindx']:
+  index = {'mindx':mindx}
+  print "  {} degrees C (mindx = {} km)".format(det[index]["Solid"]["Temperature"]["SlabPoint"][0,-1]*vtudata[index][4], mindx)
+
+print "  388.22 degrees C (benchmark UM)"</string_value>
+    </test>
+    <test name="Tslab">
+      <string_value lines="20" type="code" language="python">print "||T_{slab}||:"
+for mindx in det.parameters['mindx']:
+  index = {'mindx':mindx}
+  print "  {} degrees C (mindx = {} km)".format((sum((det[index]["Solid"]["Temperature"]["Slab"][:,-1]*vtudata[index][4])**2)/36)**0.5, mindx)
+
+print "  503.65 degrees C (benchmark UM)"</string_value>
+    </test>
+    <test name="Twedge">
+      <string_value lines="20" type="code" language="python">print "||T_{slab}||:"
+for mindx in det.parameters['mindx']:
+  index = {'mindx':mindx}
+  print "  {} degrees C (mindx = {} km)".format((sum((det[index]["Solid"]["Temperature"]["Wedge"][:,-1]*vtudata[index][4])**2)/78)**0.5, mindx)
+  
+print "  854.12 degrees C (benchmark UM)"</string_value>
+    </test>
+    <test name="display">
+      <string_value lines="20" type="code" language="python">import matplotlib
+if havedisplay[0]: 
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import os
+
+if havedisplay[0]: plt.show()</string_value>
+    </test>
+  </tests>
+</harness_options>

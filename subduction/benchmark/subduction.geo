@@ -8,11 +8,11 @@ dx_fine   = dx_fine*dx_scale;
 dx_medium = dx_medium*dx_scale;
 dx_coarse = dx_coarse*dx_scale;
 
-delta = ${delta};// slab dip angle
-d = 40.0;  // thickness of overriding rigid plate
-c = 80.0;  // coupling depth
-t = 300.0; // total depth
-e = 50.0;  // extra distance on right
+delta = 45.0;// slab dip angle
+d = 50.0;  // thickness of overriding rigid plate
+c = 80.0;  // coupling depth - not used in benchmark
+t = 600.0; // total depth
+e = 60.0;  // extra distance on right
 
 dx = d/Tan(delta*Pi/180.);
 cx = c/Tan(delta*Pi/180.);
