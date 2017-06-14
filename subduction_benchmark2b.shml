@@ -18,7 +18,7 @@
       <parameter_sweep>
         <parameter name="mindx">
           <values>
-            <string_value lines="1">2.0</string_value>
+            <string_value lines="1">2.0 1.0 0.5 0.25</string_value>
             <comment>km</comment>
           </values>
         </parameter>
