@@ -180,7 +180,9 @@ for dmu in vtudata.parameters['dmu']:
     x = vtudata[index][1]
     v = vtudata[index][2]
     fig = plt.figure()
-    plt.quiver(x[:,0], x[:,1], v[:,0], v[:,1], linewidth=1, scale=10.0)
+    stride = 1
+    q = plt.quiver(x[:,0][::stride], x[:,1][::stride], v[:,0][::stride], v[:,1][::stride], width=0.005, units='x', scale_units='x', scale=10, color='k')
+    plt.quiverkey(q, 0.9, 0.9, 1, "1", labelpos='S', coordinates='figure', color='k')
     plt.gca().set_aspect('equal')
     plt.xlabel('x')
     plt.ylabel('y')
