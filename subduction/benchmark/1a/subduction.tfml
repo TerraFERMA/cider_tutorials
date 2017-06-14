@@ -1,0 +1,450 @@
+<?xml version='1.0' encoding='utf-8'?>
+<terraferma_options>
+  <geometry>
+    <dimension>
+      <integer_value rank="0">2</integer_value>
+    </dimension>
+    <mesh name="Mesh">
+      <source name="File">
+        <file>
+          <string_value lines="1" type="filename">subduction</string_value>
+        </file>
+        <cell>
+          <string_value lines="1">triangle</string_value>
+        </cell>
+      </source>
+    </mesh>
+  </geometry>
+  <io>
+    <output_base_name>
+      <string_value lines="1">subduction_solid</string_value>
+    </output_base_name>
+    <visualization>
+      <element name="P1">
+        <family>
+          <string_value lines="1">CG</string_value>
+        </family>
+        <degree>
+          <integer_value rank="0">1</integer_value>
+        </degree>
+      </element>
+    </visualization>
+    <dump_periods>
+      <visualization_period>
+        <real_value rank="0">50.0</real_value>
+      </visualization_period>
+      <statistics_period_in_timesteps>
+        <integer_value rank="0">10</integer_value>
+      </statistics_period_in_timesteps>
+      <detectors_period_in_timesteps>
+        <integer_value rank="0">10</integer_value>
+      </detectors_period_in_timesteps>
+    </dump_periods>
+    <detectors>
+      <point name="SlabPoint">
+        <real_value shape="2" dim1="dim" rank="1">60 -60</real_value>
+      </point>
+      <array name="Wedge">
+        <python>
+          <string_value lines="20" type="code" language="python">def val():
+  from numpy import arange
+  coords = []
+  for i in arange(54.0,120.0+6.0, 6.0):
+    for j in arange(-54.0, -i-6.0, -6.0):
+      coords.append([i,j])
+  return coords</string_value>
+        </python>
+      </array>
+      <array name="Slab">
+        <python>
+          <string_value lines="20" type="code" language="python">def val():
+  from numpy import arange
+  coords = []
+  for i in arange(0.0,210.0+6.0, 6.0):
+    coords.append([i,-i])
+  return coords</string_value>
+        </python>
+      </array>
+    </detectors>
+    <checkpointing>
+      <checkpoint_period>
+        <real_value rank="0">250.0</real_value>
+        <comment>5Ma (assuming the SolidVelocityScale is 0.05m/yr and the lengthscale is 1000m)</comment>
+      </checkpoint_period>
+    </checkpointing>
+  </io>
+  <global_parameters>
+    <ufl>
+      <string_value lines="20" type="code" language="python"># Scaled thermal diffusivity
+kappaprime = kappa/(h*v0)
+
+# Domain information:
+dx_slab  = dx(1)
+dx_wedge = dx(2)
+dx_crust = dx(3)</string_value>
+    </ufl>
+    <python>
+      <string_value lines="20" type="code" language="python">delta = 45.0  # slab dip angle</string_value>
+    </python>
+  </global_parameters>
+  <system name="Solid">
+    <mesh name="Mesh"/>
+    <ufl_symbol name="global">
+      <string_value lines="1">us</string_value>
+    </ufl_symbol>
+    <field name="Temperature">
+      <ufl_symbol name="global">
+        <string_value lines="1">T</string_value>
+      </ufl_symbol>
+      <type name="Function">
+        <rank name="Scalar" rank="0">
+          <element name="P2">
+            <family>
+              <string_value lines="1">CG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">2</integer_value>
+            </degree>
+          </element>
+          <initial_condition type="initial_condition" name="Slab">
+            <region_ids>
+              <integer_value shape="1" rank="1">1</integer_value>
+            </region_ids>
+            <cpp rank="0">
+              <members>
+                <string_value lines="20" type="code" language="cpp">double h, hthermal;</string_value>
+              </members>
+              <initialization>
+                <string_value lines="20" type="code" language="cpp">GenericFunction_ptr h_ptr = system()-&gt;fetch_coeff("LengthScale")-&gt;genericfunction_ptr(time());
+GenericFunction_ptr kappa_ptr = system()-&gt;fetch_coeff("ThermalDiffusivity")-&gt;genericfunction_ptr(time());
+GenericFunction_ptr tslab_ptr = system()-&gt;fetch_coeff("SlabAge")-&gt;genericfunction_ptr(time());
+
+h = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(h_ptr));
+double kappa = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(kappa_ptr));
+double tslab = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(tslab_ptr));
+hthermal = 2*sqrt(kappa*tslab);</string_value>
+              </initialization>
+              <eval>
+                <string_value lines="20" type="code" language="cpp">values[0] = erf((-x[1]*h)/hthermal);</string_value>
+                <comment>from math import erf,sqrt
+t_50 = 50.0*1.e6*365*24*60*60
+kappa = 0.7272e-6
+d_thermal = 2.*sqrt(kappa*t_50)
+
+def val(X):
+  global erf, d_thermal
+  depth = -X[1]*1000.0
+  value = erf(depth/d_thermal)
+  return value</comment>
+              </eval>
+            </cpp>
+          </initial_condition>
+          <initial_condition type="initial_condition" name="Wedge">
+            <region_ids>
+              <integer_value shape="1" rank="1">2</integer_value>
+              <comment>lowercrust 87</comment>
+            </region_ids>
+            <constant>
+              <real_value rank="0">1.0</real_value>
+            </constant>
+          </initial_condition>
+          <initial_condition type="initial_condition" name="Crust">
+            <region_ids>
+              <integer_value shape="1" rank="1">3</integer_value>
+              <comment>lowercrust 87</comment>
+            </region_ids>
+            <python rank="0">
+              <string_value lines="20" type="code" language="python">def val(x):
+  return -0.02*x[1]</string_value>
+            </python>
+          </initial_condition>
+          <boundary_condition name="Top">
+            <boundary_ids>
+              <integer_value shape="1" rank="1">1</integer_value>
+            </boundary_ids>
+            <sub_components name="All">
+              <type type="boundary_condition" name="Dirichlet">
+                <constant>
+                  <real_value rank="0">0.0</real_value>
+                </constant>
+              </type>
+            </sub_components>
+          </boundary_condition>
+          <boundary_condition name="CrustSideIn">
+            <boundary_ids>
+              <integer_value shape="1" rank="1">6</integer_value>
+              <comment>lowercrust 106</comment>
+            </boundary_ids>
+            <sub_components name="All">
+              <type type="boundary_condition" name="Dirichlet">
+                <python rank="0">
+                  <string_value lines="20" type="code" language="python">def val(x):
+  return -0.02*x[1]</string_value>
+                </python>
+              </type>
+            </sub_components>
+          </boundary_condition>
+          <boundary_condition name="WedgeSideIn">
+            <boundary_ids>
+              <integer_value shape="1" rank="1">7</integer_value>
+              <comment>lowercrust 106</comment>
+            </boundary_ids>
+            <sub_components name="All">
+              <type type="boundary_condition" name="Dirichlet">
+                <constant>
+                  <real_value rank="0">1.0</real_value>
+                </constant>
+              </type>
+            </sub_components>
+          </boundary_condition>
+          <boundary_condition name="SlabSideIn">
+            <boundary_ids>
+              <integer_value shape="1" rank="1">5</integer_value>
+            </boundary_ids>
+            <sub_components name="All">
+              <type type="boundary_condition" name="Dirichlet">
+                <cpp rank="0">
+                  <members>
+                    <string_value lines="20" type="code" language="cpp">double h, hthermal;</string_value>
+                  </members>
+                  <initialization>
+                    <string_value lines="20" type="code" language="cpp">GenericFunction_ptr h_ptr = system()-&gt;fetch_coeff("LengthScale")-&gt;genericfunction_ptr(time());
+GenericFunction_ptr kappa_ptr = system()-&gt;fetch_coeff("ThermalDiffusivity")-&gt;genericfunction_ptr(time());
+GenericFunction_ptr tslab_ptr = system()-&gt;fetch_coeff("SlabAge")-&gt;genericfunction_ptr(time());
+
+h = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(h_ptr));
+double kappa = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(kappa_ptr));
+double tslab = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(tslab_ptr));
+hthermal = 2*sqrt(kappa*tslab);</string_value>
+                  </initialization>
+                  <eval>
+                    <string_value lines="20" type="code" language="cpp">values[0] = erf((-x[1]*h)/hthermal);</string_value>
+                    <comment>from math import erf,sqrt
+t_50 = 50.0*1.e6*365*24*60*60
+kappa = 0.7272e-6
+d_thermal = 2.*sqrt(kappa*t_50)
+
+def val(X):
+  global erf, d_thermal
+  depth = -X[1]*1000.0
+  value = erf(depth/d_thermal)
+  return value</comment>
+                  </eval>
+                </cpp>
+              </type>
+            </sub_components>
+          </boundary_condition>
+        </rank>
+      </type>
+      <diagnostics>
+        <include_in_visualization/>
+        <include_in_statistics/>
+        <include_in_detectors/>
+      </diagnostics>
+    </field>
+    <coefficient name="LengthScale">
+      <ufl_symbol name="global">
+        <string_value lines="1">h</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value type="value" name="WholeMesh">
+            <constant>
+              <real_value rank="0">1000.0</real_value>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+    </coefficient>
+    <coefficient name="SolidVelocityScale">
+      <ufl_symbol name="global">
+        <string_value lines="1">v0</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value type="value" name="WholeMesh">
+            <constant>
+              <real_value rank="0">1.5854895991882295e-09</real_value>
+              <comment>0.05/(365.*24.*60.*60.)</comment>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+    </coefficient>
+    <coefficient name="ThermalDiffusivity">
+      <ufl_symbol name="global">
+        <string_value lines="1">kappa</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value type="value" name="WholeMesh">
+            <constant>
+              <real_value rank="0">0.7272e-6</real_value>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+    </coefficient>
+    <coefficient name="BackgroundTemperature">
+      <ufl_symbol name="global">
+        <string_value lines="1">T0</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value type="value" name="WholeMesh">
+            <constant>
+              <real_value rank="0">1573.0</real_value>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+    </coefficient>
+    <coefficient name="SurfaceTemperature">
+      <ufl_symbol name="global">
+        <string_value lines="1">Ts</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value type="value" name="WholeMesh">
+            <constant>
+              <real_value rank="0">273.0</real_value>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+    </coefficient>
+    <coefficient name="SlabAge">
+      <ufl_symbol name="global">
+        <string_value lines="1">tslab</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value type="value" name="WholeMesh">
+            <constant>
+              <real_value rank="0">1576800000000000.0</real_value>
+              <comment>50.0*1.e6*365*24*60*60</comment>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+    </coefficient>
+    <coefficient name="Velocity">
+      <ufl_symbol name="global">
+        <string_value lines="1">v</string_value>
+      </ufl_symbol>
+      <type name="Function">
+        <rank name="Vector" rank="1">
+          <element name="P2">
+            <family>
+              <string_value lines="1">CG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">2</integer_value>
+            </degree>
+          </element>
+          <value type="value" name="Slab">
+            <region_ids>
+              <integer_value shape="1" rank="1">1</integer_value>
+            </region_ids>
+            <python rank="1">
+              <string_value lines="20" type="code" language="python">def val(x):
+  global delta
+  from numpy import cos, sin, pi
+  vs = [cos(delta*pi/180.0), -sin(delta*pi/180.0)]
+  return vs</string_value>
+            </python>
+          </value>
+          <value type="value" name="Crust">
+            <region_ids>
+              <integer_value shape="1" rank="1">3</integer_value>
+            </region_ids>
+            <constant name="dim">
+              <real_value shape="2" dim1="dim" rank="1">0.0 0.0</real_value>
+            </constant>
+          </value>
+          <value type="value" name="Wedge">
+            <region_ids>
+              <integer_value shape="1" rank="1">2</integer_value>
+            </region_ids>
+            <python rank="1">
+              <string_value lines="20" type="code" language="python">def val(X):
+  from math import sqrt, sin, cos, atan
+  plate_thickness = 50.0
+  values = [] 
+  depth = -plate_thickness - X[1];
+  xdist = X[0] - plate_thickness;
+  if (xdist == 0.):
+    xdist = 0.000000000000001
+  if (depth == 0.0):
+    values.append(0.0)
+    values.append(0.0)
+    return values
+  alfa = atan(1.0);
+  theta = atan(depth/xdist);
+  vtheta = -((alfa - theta)*sin(theta)*sin(alfa) - (alfa*theta*sin(alfa-theta))) / (alfa**2 - (sin(alfa))**2);
+  vr = (((alfa-theta)*cos(theta)*sin(alfa)) - (sin(alfa)*sin(theta)) - (alfa*sin(alfa-theta)) + (alfa*theta*cos(alfa-theta)))/(alfa**2 - (sin(alfa))**2);
+  values.append(- (vtheta*sin(theta) - vr*cos(theta)));
+  values.append(- (vtheta*cos(theta) + vr*sin(theta)));
+  return values</string_value>
+            </python>
+          </value>
+        </rank>
+      </type>
+      <diagnostics>
+        <include_in_visualization/>
+      </diagnostics>
+    </coefficient>
+    <nonlinear_solver name="Solver">
+      <type name="SNES">
+        <form name="Residual" rank="0">
+          <string_value lines="20" type="code" language="python">F = T_t*inner(v_i, grad(T_i))*dx + \
+    inner(grad(T_t), kappaprime*grad(T_i))*dx</string_value>
+          <ufl_symbol name="solver">
+            <string_value lines="1">F</string_value>
+          </ufl_symbol>
+        </form>
+        <form name="Jacobian" rank="1">
+          <string_value lines="20" type="code" language="python">J=derivative(F,us_i,us_a)</string_value>
+          <ufl_symbol name="solver">
+            <string_value lines="1">J</string_value>
+          </ufl_symbol>
+        </form>
+        <form_representation name="quadrature"/>
+        <quadrature_degree>
+          <integer_value rank="0">8</integer_value>
+        </quadrature_degree>
+        <quadrature_rule name="default"/>
+        <snes_type name="ls">
+          <ls_type name="cubic"/>
+          <convergence_test name="default"/>
+        </snes_type>
+        <relative_error>
+          <real_value rank="0">1.e-6</real_value>
+        </relative_error>
+        <absolute_error>
+          <real_value rank="0">1.e-15</real_value>
+        </absolute_error>
+        <max_iterations>
+          <integer_value rank="0">1</integer_value>
+        </max_iterations>
+        <monitors>
+          <residual/>
+        </monitors>
+        <linear_solver>
+          <iterative_method name="preonly"/>
+          <preconditioner name="lu">
+            <factorization_package name="umfpack"/>
+          </preconditioner>
+        </linear_solver>
+        <never_ignore_solver_failures/>
+      </type>
+      <solve name="in_timeloop"/>
+    </nonlinear_solver>
+  </system>
+</terraferma_options>
