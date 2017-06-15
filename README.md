@@ -26,8 +26,8 @@ Available input files include:
 
   Available parameters are:
 
-  * `k` - non-dimensional diffusion coefficient (default = 1)
-  * `f` - non-dimensional heat source (default = 1)
+  * `k` - non-dimensional diffusion coefficient (default = 1.0)
+  * `f` - non-dimensional heat source (default = 1.0)
   * `ncells` - number of cells in each dimension of the unit square (default = 32)
 
   Outputs:
@@ -42,7 +42,7 @@ everywhere except at the top of the domain where shear is driven tangential to t
 
   Available parameters are:
 
-  * `dmu` - viscosity jump factor in the lower half of the domain (default = 1, no jump in viscosity)
+  * `dmu` - viscosity jump factor in the lower half of the domain (default = 1.0, no jump in viscosity)
   * `ncells` - number of cells in each dimension of the unit square (default = 32)
 
   Outputs:
@@ -57,7 +57,7 @@ everywhere except at the top of the domain where shear is driven tangential to t
 
   Available parameters are:
 
-  * `dmu` - viscosity jump factor in the lower half of the domain (default = 1, no jump in viscosity)
+  * `dmu` - viscosity jump factor in the lower half of the domain (default = 1.0, no jump in viscosity)
   * `ncells` - number of cells in each dimension of the unit square (default = 32)
 
   Outputs:
@@ -74,9 +74,9 @@ overriding crust.  Simulations are run for 20Myr.
 
   Available parameters are:
 
-  * `delta` - slab dip in degrees from horizontal (default = 45degrees)
-  * `tslab` - age of the incoming slab in Myr (default =  50Myr)
-  * `tcrust` - age of the overriding crust in Myr (default = 50Myr)
+  * `delta` - slab dip in degrees from horizontal (default = 45.0degrees)
+  * `tslab` - age of the incoming slab in Myr (default =  50.0Myr)
+  * `tcrust` - age of the overriding crust in Myr (default = 50.0Myr)
   * `vslab` - convergence rate of slab and crust in m/yr (default = 0.05m/yr)
   * `mindx` - minimum element edge length of the wedge corner in km (default = 3.0km)
 
@@ -142,7 +142,7 @@ distributions in a diffusion creep rheology wedge with natural velocity boundary
 
   Available parameters are:
 
-  * `mindx` - minimum element edge length of the wedge corner in km (default = 3.0km)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 2.0km)
 
   Outputs:
   * plot(s) of the re-dimensionalized temperature and velocity solutions
@@ -158,7 +158,7 @@ distributions in a dislocation creep rheology wedge with natural velocity bounda
 
   Available parameters are:
 
-  * `mindx` - minimum element edge length of the wedge corner in km (default = 3.0km)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 2.0km)
 
   Outputs:
   * plot(s) of the re-dimensionalized temperature and velocity solutions
