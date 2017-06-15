@@ -182,7 +182,7 @@ vtudata = [triang, vtulocations, T, v, T0-Ts]</string_value>
         </variable>
         <variable name="errfile">
           <string_value lines="20" type="code" language="python">err = file("terraferma.err-0", 'r')
-errfile = err.readlines()</string_value>
+errfile = [line for line in err.readlines() if not line.startswith("WARNING:")]</string_value>
         </variable>
         <variable name="det">
           <string_value lines="20" type="code" language="python">from buckettools.statfile import parser

@@ -860,18 +860,6 @@ F += p_t*div(vvar)*(dx_wedge + dx_crust)</string_value>
               </linear_solver>
             </fieldsplit>
             <fieldsplit name="EverythingElse">
-              <field name="Velocity">
-                <region_ids>
-                  <integer_value shape="1" rank="1">1</integer_value>
-                  <comment>lowercrust 87</comment>
-                </region_ids>
-              </field>
-              <field name="Pressure">
-                <region_ids>
-                  <integer_value shape="1" rank="1">1</integer_value>
-                  <comment>lowercrust 87</comment>
-                </region_ids>
-              </field>
               <monitors/>
               <linear_solver>
                 <iterative_method name="preonly"/>
