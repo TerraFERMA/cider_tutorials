@@ -78,7 +78,7 @@ overriding crust.  Simulations are run for 20Myr.
   * `tslab` - age of the incoming slab in Myr (default =  50Myr)
   * `tcrust` - age of the overriding crust in Myr (default = 50Myr)
   * `vslab` - convergence rate of slab and crust in m/yr (default = 0.05m/yr)
-  * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 3.0km)
 
   Outputs:
   * plot(s) of the re-dimensionalized temperature and velocity solutions
@@ -94,7 +94,7 @@ the wedge.
 
   Available parameters are:
 
-  * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 3.0km)
 
   Outputs:
   * plot(s) of the re-dimensionalized temperature and velocity solutions
@@ -110,7 +110,7 @@ distributions in an isoviscous wedge with essential velocity boundary conditions
 
   Available parameters are:
 
-  * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 3.0km)
 
   Outputs:
   * plot(s) of the re-dimensionalized temperature and velocity solutions
@@ -126,7 +126,7 @@ distributions in an isoviscous wedge with natural velocity boundary conditions o
 
   Available parameters are:
 
-  * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 3.0km)
 
   Outputs:
   * plot(s) of the re-dimensionalized temperature and velocity solutions
@@ -142,7 +142,7 @@ distributions in a diffusion creep rheology wedge with natural velocity boundary
 
   Available parameters are:
 
-  * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 3.0km)
 
   Outputs:
   * plot(s) of the re-dimensionalized temperature and velocity solutions
@@ -158,7 +158,7 @@ distributions in a dislocation creep rheology wedge with natural velocity bounda
 
   Available parameters are:
 
-  * `mindx` - minimum element edge length of the wedge corner in km (default = 2km)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 3.0km)
 
   Outputs:
   * plot(s) of the re-dimensionalized temperature and velocity solutions
