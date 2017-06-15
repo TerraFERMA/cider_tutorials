@@ -47,6 +47,8 @@ WORKDIR $TF_HOME
 
 # set some useful aliases
 COPY bash_aliases $TF_HOME/.bash_aliases
+# update welcome message
+COPY WELCOME $TF_HOME/WELCOME
 
 # install and build the CIDER tutorials
 RUN export PYTHONPATH=$TF_PREFIX/lib/python2.7/site-packages:$FENICS_PREFIX/lib/python2.7/site-packages && \

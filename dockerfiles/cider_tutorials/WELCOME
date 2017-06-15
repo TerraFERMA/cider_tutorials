@@ -1,0 +1,32 @@
+# TerraFERMA CIDER tutorials docker image
+
+Welcome to TerraFERMA (CIDER tutorials)!
+
+This docker image contains a complete installation of TerraFERMA and its dependencies, PETSc, FEniCS and SPuD, within an Ubuntu
+16.04LTS OS.
+
+The environment variables have been set automatically using environment modules and it should now be possible to build and run
+TerraFERMA models within this container.  Opening the diamond GUI (and other visualization tools) depends on having forwarded the
+X11 connection correctly from this docker container to the local machine.  Additionally the `shared` directory is available to use 
+as shared volume with the local machine but depends on the correct configuration being used at startup.
+
+The folder `cider_tutorials` contains several example simulations for this tutorial.  Full instructions on how to run these can be 
+found in the `README.md` file in that folder but in general you should use the `tfsimulationharness` command.  For example, to run
+the simple Poisson heat distribution example run:
+
+    cd cider_tutorials
+    tfsimulationharness --test poisson_simple.shml
+
+The folder `cider_tutorials.examples` contains a suite of pre-run example simulations across a range of parameters (also documented
+in the `README.md` file in that folder).  To view the pre-prepared output you should use the `tfsimulationharness` command with the
+`--just-test` tag instead of `--test` above.  For example:
+
+    cd cider_tutorials.examples
+    tfsimulationharness --just-test poisson_simple.shml
+
+Additionally, the folders `tests` and `tutorials` contain links to more general testing and tutorial suites for TerraFERMA.  
+Additional input files can be downloaded directly to this container or shared via the local machine.  For example, the benchmarking 
+suite can be obtained from the TerraFERMA github repositories. 
+
+
+
