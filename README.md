@@ -142,7 +142,7 @@ distributions in a diffusion creep rheology wedge with natural velocity boundary
 
   Available parameters are:
 
-  * `mindx` - minimum element edge length of the wedge corner in km (default = [3.0, 2.0, 1.0, 0.5, 0.25]km)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = [2.0, 1.0, 0.5, 0.25]km)
 
   Outputs:
   * plot(s) of the re-dimensionalized temperature and velocity solutions
@@ -158,7 +158,7 @@ distributions in a dislocation creep rheology wedge with natural velocity bounda
 
   Available parameters are:
 
-  * `mindx` - minimum element edge length of the wedge corner in km (default = [3.0, 2.0, 1.0, 0.5, 0.25]km)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = [2.0, 1.0, 0.5, 0.25]km)
 
   Outputs:
   * plot(s) of the re-dimensionalized temperature and velocity solutions
