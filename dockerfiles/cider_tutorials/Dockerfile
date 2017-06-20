@@ -63,10 +63,5 @@ RUN export PYTHONPATH=$TF_PREFIX/lib/python2.7/site-packages:$FENICS_PREFIX/lib/
     cd cider_tutorials && \
     tfsimulationharness --build *.shml
 
-# run the complete CIDER tutorials (this will take a while!)
-RUN curl -s -o cider_tutorials.examples.tar.gz -L "https://www.dropbox.com/s/g6i9lqhbd3z85gm/cider_tutorials.examples.tar.gz?dl=0" && \
-    tar -xzf cider_tutorials.examples.tar.gz && \
-    rm cider_tutorials.examples.tar.gz
-
 USER root
 
