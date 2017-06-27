@@ -727,6 +727,16 @@ J += p_t*div(v_a)*(dx_wedge)</string_value>
               </linear_solver>
             </fieldsplit>
             <fieldsplit name="EverythingElse">
+              <field name="Velocity">
+                <region_ids>
+                  <integer_value shape="2" rank="1">1 3</integer_value>
+                </region_ids>
+              </field>
+              <field name="Pressure">
+                <region_ids>
+                  <integer_value shape="2" rank="1">1 3</integer_value>
+                </region_ids>
+              </field>
               <monitors/>
               <linear_solver>
                 <iterative_method name="preonly"/>
@@ -806,8 +816,16 @@ F += p_t*div(v_i)*(dx_wedge)</string_value>
               </linear_solver>
             </fieldsplit>
             <fieldsplit name="EverythingElse">
-              <field name="Velocity"/>
-              <field name="Pressure"/>
+              <field name="Velocity">
+                <region_ids>
+                  <integer_value shape="2" rank="1">1 3</integer_value>
+                </region_ids>
+              </field>
+              <field name="Pressure">
+                <region_ids>
+                  <integer_value shape="2" rank="1">1 3</integer_value>
+                </region_ids>
+              </field>
               <monitors/>
               <linear_solver>
                 <iterative_method name="preonly"/>
