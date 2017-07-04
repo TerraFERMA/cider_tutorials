@@ -30,9 +30,9 @@
       <string_value lines="1">subduction_fluid</string_value>
     </output_base_name>
     <visualization>
-      <element name="P1DG">
+      <element name="P1">
         <family>
-          <string_value lines="1">DG</string_value>
+          <string_value lines="1">CG</string_value>
         </family>
         <degree>
           <integer_value rank="0">1</integer_value>
@@ -90,28 +90,18 @@
   </timestepping>
   <global_parameters>
     <ufl>
-      <string_value lines="20" type="code" language="python"># Kelemen style diffusion creep formulation
-Tdim = Ts + (T0-Ts)*T_i
-# inverse dimensionless diffusion creep viscosity
-inv_etadiff = exp(QonRT0*(1.0 - T0/Tdim))
-# inverse dimensionless effective viscosity
-inv_etaprime = inv_etadiff + eta0/etamax
-# "harmonic mean" viscosity (actually twice the harmonic mean)
-etaprime = 1./inv_etaprime
-
-# inverse dimensionless bulk viscosity (at two time-levels)
-inv_zetareg_i   = (phi_i + phieps)*inv_etaprime
-inv_zetareg_n   = (phi_n + phieps)*inv_etaprime
-
-Lsq     = eta0*v0/(rhos-rhof)/g     # suction length L squared
-deltasq = Lsq*w0onv0                # compaction length squared  only for 1/phi bulk viscosity
-hondsq  = (h*h)/(deltasq)           # compaction parameter
-v0onw0  = 1./w0onv0                 # ratio solid to fluid velocity
-p0oncp0 = Lsq/(h*h)                 # scaled suction length (pressure scale) 
+      <string_value lines="20" type="code" language="python">v0onw0  = 1./w0onv0                 # ratio solid to fluid velocity
 
 # permeability
 K     = phi_i**nperm
-Kreg  = (phi_i + phieps)**nperm
+K_n   = phi_n**nperm
+
+# source
+#from math import pi
+x = SpatialCoordinate(uf_e.cell())
+r = sqrt(x[0]**2 + x[1]**2)
+fin = exp(-(r-fgloc)**2/(2*fgwidth**2))/(fgwidth*sqrt(2*pi))
+# this should give a gaussian at depth=fgdepth, with width=fgwidth and amplitude scaled to give an integral of 1.
 
 # Domain information:
 dx_wedge = dx(2)
@@ -483,6 +473,48 @@ F += pm_t*(pm_i - pm_n)*dx</string_value>
       </type>
       <diagnostics/>
     </coefficient>
+    <coefficient name="ScaledSolidVelocity">
+      <ufl_symbol name="global">
+        <string_value lines="1">vonw0</string_value>
+      </ufl_symbol>
+      <type name="Expression">
+        <rank name="Vector" rank="1">
+          <element name="P2">
+            <family>
+              <string_value lines="1">CG</string_value>
+            </family>
+            <degree>
+              <integer_value rank="0">2</integer_value>
+            </degree>
+          </element>
+          <value type="value" name="WholeMesh">
+            <cpp rank="1">
+              <members>
+                <string_value lines="20" type="code" language="cpp">GenericFunction_ptr v_ptr;
+
+double w0onv0;</string_value>
+              </members>
+              <initialization>
+                <string_value lines="20" type="code" language="cpp">v_ptr = system()-&gt;fetch_field("Velocity")-&gt;genericfunction_ptr(time());
+
+GenericFunction_ptr w0onv0_ptr = bucket()-&gt;fetch_system("Fluid")-&gt;fetch_coeff("Mobility")-&gt;genericfunction_ptr(time());
+w0onv0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(w0onv0_ptr));</string_value>
+              </initialization>
+              <eval>
+                <string_value lines="20" type="code" language="cpp">v_ptr-&gt;eval(values, x, cell);
+for (uint i = 0; i &lt; values.size(); i++)
+{
+  values[i] = values[i]/w0onv0;
+}</string_value>
+              </eval>
+            </cpp>
+          </value>
+        </rank>
+      </type>
+      <diagnostics>
+        <include_in_visualization/>
+      </diagnostics>
+    </coefficient>
     <nonlinear_solver name="Solver">
       <type name="SNES">
         <form name="Residual" rank="0">
@@ -544,12 +576,12 @@ F += p_t*(p_i - pm_i)*dx</string_value>
       </ufl_symbol>
       <type name="Function">
         <rank name="Scalar" rank="0">
-          <element name="P1DG">
+          <element name="P2">
             <family>
-              <string_value lines="1">DG</string_value>
+              <string_value lines="1">CG</string_value>
             </family>
             <degree>
-              <integer_value rank="0">1</integer_value>
+              <integer_value rank="0">2</integer_value>
             </degree>
           </element>
           <initial_condition type="initial_condition" name="WholeMesh">
@@ -569,93 +601,6 @@ F += p_t*(p_i - pm_i)*dx</string_value>
         <include_in_statistics/>
       </diagnostics>
     </field>
-    <field name="CompactionPressure">
-      <ufl_symbol name="global">
-        <string_value lines="1">cp</string_value>
-      </ufl_symbol>
-      <type name="Function">
-        <rank name="Scalar" rank="0">
-          <element name="P2">
-            <family>
-              <string_value lines="1">CG</string_value>
-            </family>
-            <degree>
-              <integer_value rank="0">2</integer_value>
-            </degree>
-          </element>
-          <initial_condition type="initial_condition" name="WholeMesh">
-            <constant>
-              <real_value rank="0">0.0</real_value>
-            </constant>
-          </initial_condition>
-        </rank>
-      </type>
-      <diagnostics>
-        <include_in_visualization/>
-        <include_in_statistics/>
-      </diagnostics>
-    </field>
-    <coefficient name="PorosityRegularizationParameter">
-      <ufl_symbol name="global">
-        <string_value lines="1">phieps</string_value>
-      </ufl_symbol>
-      <type name="Expression">
-        <rank name="Scalar" rank="0">
-          <element name="P0R">
-            <family>
-              <string_value lines="1">R</string_value>
-            </family>
-            <degree>
-              <integer_value rank="0">0</integer_value>
-            </degree>
-          </element>
-          <value type="value" name="WholeMesh">
-            <cpp rank="0">
-              <members>
-                <string_value lines="20" type="code" language="cpp">double phieps;</string_value>
-              </members>
-              <initialization>
-                <string_value lines="20" type="code" language="cpp">GenericFunction_ptr rhos_ptr = system()-&gt;fetch_coeff("SolidDensity")-&gt;genericfunction_ptr(time());
-double rhos = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(rhos_ptr));
-
-GenericFunction_ptr rhof_ptr = system()-&gt;fetch_coeff("FluidDensity")-&gt;genericfunction_ptr(time());
-double rhof = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(rhof_ptr));
-
-GenericFunction_ptr v0_ptr = bucket()-&gt;fetch_system("Solid")-&gt;fetch_coeff("SolidVelocityScale")-&gt;genericfunction_ptr(time());
-double v0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(v0_ptr));
-
-GenericFunction_ptr w0onv0_ptr = system()-&gt;fetch_coeff("Mobility")-&gt;genericfunction_ptr(time());
-double w0onv0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(w0onv0_ptr));
-
-GenericFunction_ptr g_ptr = system()-&gt;fetch_coeff("GravityMagnitude")-&gt;genericfunction_ptr(time());
-double g = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(g_ptr));
-
-GenericFunction_ptr deltaeps_ptr = system()-&gt;fetch_coeff("MinimumCompactionLength")-&gt;genericfunction_ptr(time());
-double deltaeps = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(deltaeps_ptr));
-
-GenericFunction_ptr h_ptr = bucket()-&gt;fetch_system("Solid")-&gt;fetch_coeff("LengthScale")-&gt;genericfunction_ptr(time());
-double h = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(h_ptr));
-
-GenericFunction_ptr eta0_ptr = bucket()-&gt;fetch_system("Solid")-&gt;fetch_coeff("ViscosityScale")-&gt;genericfunction_ptr(time());
-double eta0 = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(eta0_ptr));
-
-GenericFunction_ptr nperm_ptr = system()-&gt;fetch_coeff("PorosityPermeabilityPower")-&gt;genericfunction_ptr(time());
-double nperm = double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(nperm_ptr));
-
-phieps = std::pow((deltaeps*deltaeps)/(eta0*v0*w0onv0/((rhos-rhof)*g)/(h*h)), 1./(nperm-1.));</string_value>
-              </initialization>
-              <eval>
-                <string_value lines="20" type="code" language="cpp">values[0] = phieps;</string_value>
-              </eval>
-            </cpp>
-          </value>
-        </rank>
-      </type>
-      <diagnostics>
-        <include_in_visualization/>
-        <include_in_statistics/>
-      </diagnostics>
-    </coefficient>
     <coefficient name="FluidDensity">
       <ufl_symbol name="global">
         <string_value lines="1">rhof</string_value>
@@ -734,22 +679,6 @@ phieps = std::pow((deltaeps*deltaeps)/(eta0*v0*w0onv0/((rhos-rhof)*g)/(h*h)), 1.
       </type>
       <diagnostics/>
     </coefficient>
-    <coefficient name="MinimumCompactionLength">
-      <ufl_symbol name="global">
-        <string_value lines="1">deltaeps</string_value>
-      </ufl_symbol>
-      <type name="Constant">
-        <rank name="Scalar" rank="0">
-          <value type="value" name="WholeMesh">
-            <constant>
-              <real_value rank="0">4.0</real_value>
-              <comment>in km</comment>
-            </constant>
-          </value>
-        </rank>
-      </type>
-      <diagnostics/>
-    </coefficient>
     <coefficient name="PorosityPermeabilityPower">
       <ufl_symbol name="global">
         <string_value lines="1">nperm</string_value>
@@ -797,51 +726,55 @@ phieps = std::pow((deltaeps*deltaeps)/(eta0*v0*w0onv0/((rhos-rhof)*g)/(h*h)), 1.
       </type>
       <diagnostics/>
     </coefficient>
+    <coefficient name="PorosityHorizontalDiffusivity">
+      <ufl_symbol name="global">
+        <string_value lines="1">phiepsx</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value type="value" name="WholeMesh">
+            <constant>
+              <real_value rank="0">0.01</real_value>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+    </coefficient>
+    <coefficient name="PorosityVerticalDiffusivity">
+      <ufl_symbol name="global">
+        <string_value lines="1">phiepsz</string_value>
+      </ufl_symbol>
+      <type name="Constant">
+        <rank name="Scalar" rank="0">
+          <value type="value" name="WholeMesh">
+            <constant>
+              <real_value rank="0">1.0</real_value>
+            </constant>
+          </value>
+        </rank>
+      </type>
+      <diagnostics/>
+    </coefficient>
     <nonlinear_solver name="Solver">
       <type name="SNES">
         <form name="Residual" rank="0">
-          <string_value lines="20" type="code" language="python"># source
-#from math import pi
-x = SpatialCoordinate(uf_e.cell())
-r = sqrt(x[0]**2 + x[1]**2)
-fin = exp(-(r-fgloc)**2/(2*fgwidth**2))/(fgwidth*sqrt(2*pi))
-# this should give a gaussian at depth=fgdepth, with width=fgwidth and amplitude scaled to give an integral of 1.
+          <string_value lines="20" type="code" language="python">n = FacetNormal(uf_e.cell())
 
-n = FacetNormal(uf_e.cell())
+# add small anisotropic diffusion term to stabilize porosity
+diffusion_n = phiepsx*phi_t.dx(0)*phi_n.dx(0) + phiepsz*phi_t.dx(1)*phi_n.dx(1)
+diffusion = phiepsx*phi_t.dx(0)*phi_i.dx(0) + phiepsz*phi_t.dx(1)*phi_i.dx(1)
+bphi = phi_t*(phi_i - phi_n + \
+              dt*theta*v0onw0*inner(v_i, grad(phi_i)) + \
+              dt*(1.-theta)*v0onw0*inner(v_i, grad(phi_n))) \
+       + dt*theta*diffusion + dt*(1.-theta)*diffusion_n \
+       - dt*theta*K*phi_t.dx(1) - dt*(1.-theta)*K_n*phi_t.dx(1)
+sphiout = theta*dt*K*phi_t*n[1] + (1.-theta)*dt*K_n*phi_t*n[1]
+sphiin  = -dt*phi_t*fin
 
-# begin the residuals...
-# compaction pressure:
-bcpreg = inner(grad(cp_t), Kreg*grad(cp_i)) + hondsq*cp_t*cp_i*inv_zetareg_i - K*cp_t.dx(1)
-scpup = K*cp_t*n[1]
-scpdn = -cp_t*fin
-
-F = bcpreg*dx_wedge
-F += scpup*ds_wedgetop
-F += scpdn*ds_slabtop
-
-# porosity:
-bphim = phi_t*(phi_i - phi_n \
-          - theta*dt*hondsq*cp_i*inv_zetareg_i \
-          - (1.-theta)*dt*hondsq*cp_n*inv_zetareg_n)
-bphia = - dt*dot(grad(phi_t), v0onw0*v_i*(theta*phi_i + (1.-theta)*phi_n)) \
-        - dt*phi_t*v0onw0*div(v_i)*(theta*phi_i + (1.-theta)*phi_n)
-bphi  = bphim + bphia
-
-vonw0n = v0onw0*dot(v_i, n)
-vonw0nabs = 0.5*(vonw0n + abs(vonw0n))
-sphiin = dt('+')*theta('+')*dot(vonw0nabs('+')*phi_i('+') \
-        - vonw0nabs('-')*phi_i('-'), jump(phi_t)) \
-        + dt('+')*(1.-theta('+'))*dot(vonw0nabs('+')*phi_n('+') \
-        - vonw0nabs('-')*phi_n('-'), jump(phi_t))
-sphiexin = dt*vonw0n*phi_t*(theta*phi_i + (1.-theta)*phi_n)
-sphiexsd = dt*vonw0nabs*phi_t*(theta*phi_i + (1.-theta)*phi_n)  # outflows but 0 if inflow
-
-F += bphi*dx_wedge
-F += sphiin*dS(0)
-F += sphiexin*ds_wedgetop
-F += sphiexin*ds_slabtop
-F += sphiexsd*ds_wedgebase
-F += sphiexsd*ds_wedgeright</string_value>
+F  = bphi*dx_wedge
+F += sphiout*ds_wedgetop
+F += sphiin*ds_slabtop</string_value>
           <ufl_symbol name="solver">
             <string_value lines="1">F</string_value>
           </ufl_symbol>
@@ -853,6 +786,9 @@ F += sphiexsd*ds_wedgeright</string_value>
           </ufl_symbol>
         </form>
         <form_representation name="quadrature"/>
+        <quadrature_degree>
+          <integer_value rank="0">8</integer_value>
+        </quadrature_degree>
         <quadrature_rule name="default"/>
         <snes_type name="ls">
           <ls_type name="cubic"/>
@@ -884,11 +820,11 @@ F += sphiexsd*ds_wedgeright</string_value>
   <system name="Velocity">
     <mesh name="SubMesh"/>
     <ufl_symbol name="global">
-      <string_value lines="1">usf</string_value>
+      <string_value lines="1">ufv</string_value>
     </ufl_symbol>
-    <field name="SeparationFlux">
+    <field name="FluidVelocity">
       <ufl_symbol name="global">
-        <string_value lines="1">sf</string_value>
+        <string_value lines="1">fv</string_value>
       </ufl_symbol>
       <type name="Function">
         <rank name="Vector" rank="1">
@@ -929,84 +865,17 @@ F += sphiexsd*ds_wedgeright</string_value>
           <value type="value" name="WholeMesh">
             <cpp rank="0">
               <members>
-                <string_value lines="20" type="code" language="cpp">GenericFunction_ptr fv_ptr;
-
-mutable double v_max, dt;</string_value>
+                <string_value lines="20" type="code" language="cpp">GenericFunction_ptr fv_ptr;</string_value>
               </members>
               <initialization>
-                <string_value lines="20" type="code" language="cpp">fv_ptr = system()-&gt;fetch_coeff("FluidVelocity")-&gt;genericfunction_ptr(time());</string_value>
+                <string_value lines="20" type="code" language="cpp">fv_ptr = system()-&gt;fetch_field("FluidVelocity")-&gt;genericfunction_ptr(time());</string_value>
               </initialization>
               <eval>
                 <string_value lines="20" type="code" language="cpp">const dolfin::Cell dcell((*system()-&gt;mesh()), cell.index);
 dolfin::Array&lt;double&gt; v_values(2);
 fv_ptr-&gt;eval(v_values, x, cell);
-v_max = std::max(std::abs(v_values[0]),std::abs(v_values[1]));
-dt = bucket()-&gt;timestep();
-values[0] = (v_max*dt)/(2*dcell.circumradius());</string_value>
-              </eval>
-            </cpp>
-          </value>
-        </rank>
-      </type>
-      <diagnostics>
-        <include_in_visualization/>
-        <include_in_statistics/>
-      </diagnostics>
-    </coefficient>
-    <coefficient name="FluidVelocity">
-      <ufl_symbol name="global">
-        <string_value lines="1">fv</string_value>
-      </ufl_symbol>
-      <type name="Expression">
-        <rank name="Vector" rank="1">
-          <element name="UserDefined">
-            <family>
-              <string_value lines="1">DG</string_value>
-            </family>
-            <degree>
-              <integer_value rank="0">3</integer_value>
-            </degree>
-          </element>
-          <value type="value" name="WholeMesh">
-            <cpp rank="1">
-              <members>
-                <string_value lines="20" type="code" language="cpp">GenericFunction_ptr sf_ptr, phi_ptr, v_ptr, phieps_ptr;
-double v0onw0;
-mutable double phieps;
-mutable bool initialized;</string_value>
-              </members>
-              <initialization>
-                <string_value lines="20" type="code" language="cpp">sf_ptr = system()-&gt;fetch_field("SeparationFlux")-&gt;genericfunction_ptr(time());
-phi_ptr = bucket()-&gt;fetch_system("Fluid")-&gt;fetch_field("Porosity")-&gt;genericfunction_ptr(time());
-phieps_ptr = bucket()-&gt;fetch_system("Fluid")-&gt;fetch_coeff("PorosityRegularizationParameter")-&gt;genericfunction_ptr(time());
-v_ptr = bucket()-&gt;fetch_system("Solid")-&gt;fetch_field("Velocity")-&gt;genericfunction_ptr(time());
-
-GenericFunction_ptr w0onv0_ptr = bucket()-&gt;fetch_system("Fluid")-&gt;fetch_coeff("Mobility")-&gt;genericfunction_ptr(time());
-v0onw0 = 1./double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(w0onv0_ptr));
-
-initialized = false;</string_value>
-              </initialization>
-              <eval>
-                <string_value lines="20" type="code" language="cpp">dolfin::Array&lt;double&gt; phival(1);
-
-if (!initialized)
-{
-  phieps_ptr-&gt;eval(phival, x, cell);
-  phieps = phival[0];
-  initialized = true;
-}
-
-phi_ptr-&gt;eval(phival, x, cell);
-
-dolfin::Array&lt;double&gt; vval(values.size());
-v_ptr-&gt;eval(vval, x, cell);
-
-sf_ptr-&gt;eval(values, x, cell);
-
-for (uint i = 0; i &lt; values.size(); i++)
-{
-  values[i] = values[i]/(phival[0]+phieps) + v0onw0*vval[i];
-}</string_value>
+double v_max = std::max(std::abs(v_values[0]),std::abs(v_values[1]));
+values[0] = (v_max*bucket()-&gt;timestep())/(2*dcell.circumradius());</string_value>
               </eval>
             </cpp>
           </value>
@@ -1034,29 +903,21 @@ for (uint i = 0; i &lt; values.size(); i++)
           <value type="value" name="WholeMesh">
             <cpp rank="1">
               <members>
-                <string_value lines="20" type="code" language="cpp">GenericFunction_ptr sf_ptr, phi_ptr, v_ptr;
-double v0onw0;</string_value>
+                <string_value lines="20" type="code" language="cpp">GenericFunction_ptr fv_ptr, phi_ptr;</string_value>
               </members>
               <initialization>
-                <string_value lines="20" type="code" language="cpp">sf_ptr = system()-&gt;fetch_field("SeparationFlux")-&gt;genericfunction_ptr(time());
-phi_ptr = bucket()-&gt;fetch_system("Fluid")-&gt;fetch_field("Porosity")-&gt;genericfunction_ptr(time());
-v_ptr = bucket()-&gt;fetch_system("Solid")-&gt;fetch_field("Velocity")-&gt;genericfunction_ptr(time());
-
-GenericFunction_ptr w0onv0_ptr = bucket()-&gt;fetch_system("Fluid")-&gt;fetch_coeff("Mobility")-&gt;genericfunction_ptr(time());
-v0onw0 = 1./double(*std::dynamic_pointer_cast&lt;dolfin::Constant&gt;(w0onv0_ptr));</string_value>
+                <string_value lines="20" type="code" language="cpp">fv_ptr = system()-&gt;fetch_field("FluidVelocity")-&gt;genericfunction_ptr(time());
+phi_ptr = bucket()-&gt;fetch_system("Fluid")-&gt;fetch_field("Porosity")-&gt;genericfunction_ptr(time());</string_value>
               </initialization>
               <eval>
                 <string_value lines="20" type="code" language="cpp">dolfin::Array&lt;double&gt; phival(1);
 phi_ptr-&gt;eval(phival, x, cell);
 
-dolfin::Array&lt;double&gt; vval(values.size());
-v_ptr-&gt;eval(vval, x, cell);
-
-sf_ptr-&gt;eval(values, x, cell);
+fv_ptr-&gt;eval(values, x, cell);
 
 for (uint i = 0; i &lt; values.size(); i++)
 {
-  values[i] = values[i] + vval[i]*v0onw0*phival[0];
+  values[i] = values[i]*phival[0];
 }</string_value>
               </eval>
             </cpp>
@@ -1071,24 +932,20 @@ for (uint i = 0; i &lt; values.size(); i++)
     <nonlinear_solver name="Solver">
       <type name="SNES">
         <form name="Residual" rank="0">
-          <string_value lines="20" type="code" language="python">bsfreg = inner(sf_t,sf_i + Kreg*grad(cp_i)) - sf_t[1]*K  
+          <string_value lines="20" type="code" language="python">bvf = inner(fv_t,fv_i - vonw0_i) - fv_t[1]*(phi_i**(nperm-1))  
 
-F  = bsfreg*dx_wedge</string_value>
+F  = bvf*dx_wedge</string_value>
           <ufl_symbol name="solver">
             <string_value lines="1">F</string_value>
           </ufl_symbol>
         </form>
         <form name="Jacobian" rank="1">
-          <string_value lines="20" type="code" language="python">J = derivative(F,usf_i)</string_value>
+          <string_value lines="20" type="code" language="python">J = derivative(F,ufv_i,ufv_a)</string_value>
           <ufl_symbol name="solver">
             <string_value lines="1">J</string_value>
           </ufl_symbol>
-          <ident_zeros/>
         </form>
         <form_representation name="quadrature"/>
-        <quadrature_degree>
-          <integer_value rank="0">8</integer_value>
-        </quadrature_degree>
         <quadrature_rule name="default"/>
         <snes_type name="ls">
           <ls_type name="cubic"/>
