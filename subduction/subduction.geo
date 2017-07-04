@@ -10,7 +10,7 @@ dx_coarse = dx_coarse*dx_scale;
 
 delta = ${delta};// slab dip angle
 d = 40.0;  // thickness of overriding rigid plate
-c = 80.0;  // coupling depth
+c = ${cpdepth};  // coupling depth
 t = 300.0; // total depth
 e = 50.0;  // extra distance on right
 
