@@ -131,7 +131,8 @@ dx_wedge = dx(2)
 dx_crust = dx(3)</string_value>
     </ufl>
     <python>
-      <string_value lines="20" type="code" language="python">delta = ${delta}  # slab dip angle</string_value>
+      <string_value lines="20" type="code" language="python">delta = ${delta}  # slab dip angle
+cpdepth = ${cpdepth}  # coupling depth</string_value>
     </python>
   </global_parameters>
   <system name="Solid">
@@ -367,7 +368,7 @@ def val(X):
                 <python rank="1">
                   <string_value lines="20" type="code" language="python">from numpy import sin, pi
 uup = 40.0/sin(delta*pi/180.)
-ulow = 80.0/sin(delta*pi/180.)
+ulow = cpdepth/sin(delta*pi/180.)
 
 def val(x):
   global uup, ulow

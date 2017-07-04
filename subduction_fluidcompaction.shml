@@ -89,6 +89,12 @@ libspud.set_option("/system::Fluid/coefficient::MinimumCompactionLength/type/ran
             <single_build/>
           </update>
         </parameter>
+        <parameter name="cpdepth">
+          <values>
+            <string_value lines="1">80.0</string_value>
+            <comment>km</comment>
+          </values>
+        </parameter>
         <parameter name="fluxdepth">
           <values>
             <string_value lines="1">150.0</string_value>
@@ -205,6 +211,21 @@ libspud.set_option("/io/checkpointing/checkpoint_period", 5.e6*float(vslab)/1000
               </update>
             </parameter>
             <parameter name="mindx"/>
+            <parameter name="cpdepth">
+              <update>
+                <string_value lines="20" type="code" language="python">import libspud
+from string import Template as template
+
+if float(cpdepth) &lt; 41.0 or float(cpdepth) &gt; 299.0:
+  import sys
+  print "ERROR: cpdepth must be between 41 and 299 km!"
+  sys.exit(1)
+
+globalpython = libspud.get_option("/global_parameters/python")
+libspud.set_option("/global_parameters/python", template(globalpython).safe_substitute({"cpdepth":cpdepth}))</string_value>
+                <single_build/>
+              </update>
+            </parameter>
           </parameter_sweep>
           <required_output>
             <filenames name="checkpoints">
@@ -232,6 +253,13 @@ input_file = template(input_file).safe_substitute({"delta":delta})</string_value
                     <string_value lines="20" type="code" language="python">from string import Template as template
 
 input_file = template(input_file).safe_substitute({"mindx":mindx})</string_value>
+                  </update>
+                </parameter>
+                <parameter name="cpdepth">
+                  <update>
+                    <string_value lines="20" type="code" language="python">from string import Template as template
+
+input_file = template(input_file).safe_substitute({"cpdepth":cpdepth})</string_value>
                   </update>
                 </parameter>
               </parameter_sweep>

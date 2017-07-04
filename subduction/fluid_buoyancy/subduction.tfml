@@ -762,19 +762,28 @@ F += p_t*(p_i - pm_i)*dx</string_value>
           <string_value lines="20" type="code" language="python">n = FacetNormal(uf_e.cell())
 
 # add small anisotropic diffusion term to stabilize porosity
-diffusion_n = phiepsx*phi_t.dx(0)*phi_n.dx(0) + phiepsz*phi_t.dx(1)*phi_n.dx(1)
 diffusion = phiepsx*phi_t.dx(0)*phi_i.dx(0) + phiepsz*phi_t.dx(1)*phi_i.dx(1)
-bphi = phi_t*(phi_i - phi_n + \
-              dt*theta*v0onw0*inner(v_i, grad(phi_i)) + \
-              dt*(1.-theta)*v0onw0*inner(v_i, grad(phi_n))) \
+diffusion_n = phiepsx*phi_t.dx(0)*phi_n.dx(0) + phiepsz*phi_t.dx(1)*phi_n.dx(1)
+bphim = phi_t*(phi_i - phi_n) + \
        + dt*theta*diffusion + dt*(1.-theta)*diffusion_n \
        - dt*theta*K*phi_t.dx(1) - dt*(1.-theta)*K_n*phi_t.dx(1)
+bphia = - dt*dot(grad(phi_t), v0onw0*v_i*(theta*phi_i + (1.-theta)*phi_n)) \
+        - dt*phi_t*v0onw0*div(v_i)*(theta*phi_i + (1.-theta)*phi_n)
+bphi  = bphim + bphia
+
 sphiout = theta*dt*K*phi_t*n[1] + (1.-theta)*dt*K_n*phi_t*n[1]
 sphiin  = -dt*phi_t*fin
 
+vonw0n = v0onw0*dot(v_i, n)
+vonw0nabs = 0.5*(vonw0n + abs(vonw0n))
+sphiexin = dt*vonw0n*phi_t*(theta*phi_i + (1.-theta)*phi_n)
+sphiexsd = dt*vonw0nabs*phi_t*(theta*phi_i + (1.-theta)*phi_n)  # outflows but 0 if inflow
+
 F  = bphi*dx_wedge
-F += sphiout*ds_wedgetop
-F += sphiin*ds_slabtop</string_value>
+F += (sphiout + sphiexin)*ds_wedgetop
+F += (sphiin + sphiexin)*ds_slabtop
+F += sphiexsd*ds_wedgebase
+F += sphiexsd*ds_wedgeright</string_value>
           <ufl_symbol name="solver">
             <string_value lines="1">F</string_value>
           </ufl_symbol>
