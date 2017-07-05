@@ -78,14 +78,58 @@ overriding crust.  Simulations are run for 20Myr.
   * `tslab` - age of the incoming slab in Myr (default =  [20.0, 50.0]Myr)
   * `tcrust` - age of the overriding crust in Myr (default = [20.0, 50.0]Myr)
   * `vslab` - convergence rate of slab and crust in m/yr (default = [0.02, 0.05]m/yr)
+  * `cpdepth` - depth of mechanical coupling between the slab and the wedge (default = 80.0km)
   * `mindx` - minimum element edge length of the wedge corner in km (default = [1.0, 2.0, 3.0, 5.0]km)
 
   Outputs:
-  * plot(s) of the re-dimensionalized temperature and velocity solutions
+  * animation(s) of the re-dimensionalized temperature and velocity over time
+  * plot(s) of the re-dimensionalized temperature and velocity solutions at the end of the simulation
   * plot(s) of the temperature at the slab surface as a function of depth
   * plot(s) of the temperature in the wedge as a function of depth above the 100km contour of the slab surface
   * print out of the temperature at the 100km contour of the slab surface
   * print out of the maximum temperature (and its depth) in the wedge above the 100km contour of the slab surface
+
+* `subduction_fluidbuoyancy.shml`
+
+  Simulation of porous media aqueous fluid flow across a subduction zone wedge assuming that the fluid is only driven by buoyancy
+(zero-compaction length approximation).  Length of simulations varies depending on w0onv0 (50 times the amount of time for the
+reference fluid to traverse the wedge).
+
+  Available parameters are:
+
+  * `delta` - slab dip in degrees from horizontal (default = 45.0degrees)
+  * `tslab` - age of the incoming slab in Myr (default =  50.0Myr)
+  * `tcrust` - age of the overriding crust in Myr (default = 50.0Myr)
+  * `vslab` - convergence rate of slab and crust in m/yr (default = 0.05m/yr)
+  * `cpdepth` - depth of mechanical coupling between the slab and the wedge (default = 80.0km)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 3.0km)
+  * `fluxdepth` - depth at which fluid flux is imposed at base of wedge (default = 150.0 km)
+  * `w0onv0` - ratio of reference fluid to solid velocities (default = [5.0, 50.0, 500.0]km)
+
+  Outputs (re-dimensionalization assumes known input flux integral):
+  * animation(s) of the re-dimensionalized porosity (fluid fraction) over time
+  * time-averaged plot(s) of the re-dimensionalized porosity
+
+* `subduction_fluidcompaction.shml`
+
+  Simulation of porous media aqueous fluid flow across a subduction zone wedge assuming that the fluid is driven by buoyancy and
+compaction (still ignore dynamic pressure).  Length of simulations varies depending on w0onv0 (50 times the amount of time for the
+reference fluid to traverse the wedge).
+
+  Available parameters are:
+
+  * `delta` - slab dip in degrees from horizontal (default = 45.0degrees)
+  * `tslab` - age of the incoming slab in Myr (default =  50.0Myr)
+  * `tcrust` - age of the overriding crust in Myr (default = 50.0Myr)
+  * `vslab` - convergence rate of slab and crust in m/yr (default = 0.05m/yr)
+  * `cpdepth` - depth of mechanical coupling between the slab and the wedge (default = 80.0km)
+  * `mindx` - minimum element edge length of the wedge corner in km (default = 3.0km)
+  * `fluxdepth` - depth at which fluid flux is imposed at base of wedge (default = 150.0 km)
+  * `w0onv0` - ratio of reference fluid to solid velocities (default = [5.0, 50.0, 500.0]km)
+
+  Outputs (re-dimensionalization assumes known input flux integral):
+  * animation(s) of the re-dimensionalized porosity (fluid fraction) over time
+  * time-averaged plot(s) of the re-dimensionalized porosity
 
 * `subduction_benchmark1a.shml`
 
