@@ -174,6 +174,7 @@ if havedisplay[0][0][0]:
 else:
   matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import numpy as np
 import os
 
@@ -184,17 +185,25 @@ if len(ustats.parameters["f"]) &gt; 1 or len(ustats.parameters["k"]) &gt; 1:
     ks = [float(k) for k in ustats.parameters["k"]]
     Fs, Ks = np.meshgrid(fs, ks)
     fig1 = plt.figure()
-    plt.pcolormesh(Fs, Ks, np.asarray(ustats[index])[:,:,0], shading="gouraud")
-    plt.gca().set_aspect('equal')
-    plt.xlabel('f')
-    plt.ylabel('k')
-    plt.title('maximum (ncells = {})'.format(ncells), y=1.05)
-    cbar = plt.colorbar()
-    fig2 = plt.figure()
-    plt.pcolormesh(Fs, Ks, np.asarray(ustats[index])[:,:,1], shading="gouraud")
+    plt.imshow(np.asarray(ustats[index])[:,:,0], interpolation='nearest', cmap='bwr', origin='lower', norm=colors.LogNorm())
     plt.gca().set_aspect('equal')
     plt.xlabel('k')
     plt.ylabel('f')
+    plt.gca().set_yticks(range(0, len(fs)))
+    plt.gca().set_yticklabels(ustats.parameters['f'])
+    plt.gca().set_xticks(range(0, len(ks)))
+    plt.gca().set_xticklabels(ustats.parameters['k'])
+    plt.title('maximum (ncells = {})'.format(ncells), y=1.05)
+    cbar = plt.colorbar()
+    fig2 = plt.figure()
+    plt.imshow(np.asarray(ustats[index])[:,:,0], interpolation='nearest', cmap='bwr', origin='lower', norm=colors.LogNorm())
+    plt.gca().set_aspect('equal')
+    plt.xlabel('k')
+    plt.ylabel('f')
+    plt.gca().set_yticks(range(0, len(fs)))
+    plt.gca().set_yticklabels(ustats.parameters['f'])
+    plt.gca().set_xticks(range(0, len(ks)))
+    plt.gca().set_xticklabels(ustats.parameters['k'])
     plt.title('integral (ncells = {})'.format(ncells), y=1.05)
     cbar = plt.colorbar()</string_value>
     </test>
@@ -222,8 +231,7 @@ if len(ustats.parameters["ncells"]) &gt; 1:
       plt.plot(ncells, np.asarray(ustats[index])[:,1])
       plt.xlabel('ncells')
       plt.ylabel('integral')
-      plt.title('integral (f = {}, k = {})'.format(f, k), y=1.05)
-      </string_value>
+      plt.title('integral (f = {}, k = {})'.format(f, k), y=1.05)</string_value>
     </test>
     <test name="display">
       <string_value lines="20" type="code" language="python">import matplotlib
