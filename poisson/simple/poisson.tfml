@@ -149,7 +149,7 @@
               <real_value rank="0">1.e-10</real_value>
             </relative_error>
             <max_iterations>
-              <integer_value rank="0">100</integer_value>
+              <integer_value rank="0">1000</integer_value>
             </max_iterations>
             <zero_initial_guess/>
             <monitors/>
