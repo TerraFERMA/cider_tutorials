@@ -217,7 +217,7 @@ for mindx in det.parameters['mindx']:
 print "  607.11 degrees C (benchmark UM)"</string_value>
     </test>
     <test name="Twedge">
-      <string_value lines="20" type="code" language="python">print "||T_{slab}||:"
+      <string_value lines="20" type="code" language="python">print "||T_{wedge}||:"
 for mindx in det.parameters['mindx']:
   index = {'mindx':mindx}
   print "  {} degrees C (mindx = {} km)".format((sum((det[index]["Solid"]["Temperature"]["Wedge"][:,-1]*vtudata[index][4])**2)/78)**0.5, mindx)

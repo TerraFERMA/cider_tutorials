@@ -294,18 +294,6 @@ def val(X):
   return values</string_value>
             </python>
           </initial_condition>
-          <boundary_condition name="WedgeTop">
-            <boundary_ids>
-              <integer_value shape="1" rank="1">2</integer_value>
-            </boundary_ids>
-            <sub_components name="All">
-              <type type="boundary_condition" name="Dirichlet">
-                <constant name="dim">
-                  <real_value shape="2" dim1="dim" rank="1">0.0 0.0</real_value>
-                </constant>
-              </type>
-            </sub_components>
-          </boundary_condition>
           <boundary_condition name="Coupling">
             <boundary_ids>
               <integer_value shape="1" rank="1">9</integer_value>
@@ -331,6 +319,18 @@ def val(X):
   ul = (x[0]**2 + x[1]**2)**0.5
   return [x[0]/ul, x[1]/ul]</string_value>
                 </python>
+              </type>
+            </sub_components>
+          </boundary_condition>
+          <boundary_condition name="WedgeTop">
+            <boundary_ids>
+              <integer_value shape="1" rank="1">2</integer_value>
+            </boundary_ids>
+            <sub_components name="All">
+              <type type="boundary_condition" name="Dirichlet">
+                <constant name="dim">
+                  <real_value shape="2" dim1="dim" rank="1">0.0 0.0</real_value>
+                </constant>
               </type>
             </sub_components>
           </boundary_condition>

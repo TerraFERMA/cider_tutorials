@@ -1,0 +1,607 @@
+<?xml version='1.0' encoding='utf-8'?>
+<harness_options>
+  <length>
+    <string_value lines="1">medium</string_value>
+  </length>
+  <owner>
+    <string_value lines="1">cwilson</string_value>
+  </owner>
+  <description>
+    <string_value lines="1">A simple fluid flow subduction zone model.</string_value>
+  </description>
+  <simulations>
+    <simulation name="Fluid">
+      <input_file>
+        <string_value lines="1" type="filename">subduction/fluid_compaction/subduction.tfml</string_value>
+      </input_file>
+      <run_when name="input_changed_or_output_missing"/>
+      <parameter_sweep>
+        <parameter name="delta">
+          <values>
+            <string_value lines="1">45.0</string_value>
+            <comment>degrees</comment>
+          </values>
+        </parameter>
+        <parameter name="tslab">
+          <values>
+            <string_value lines="1">50.0</string_value>
+            <comment>Myr</comment>
+          </values>
+          <update>
+            <string_value lines="20" type="code" language="python">import libspud
+
+if float(tslab) &lt;= 0.0:
+  import sys
+  print "ERROR: tslab must be greater than 0!"
+  sys.exit(1)
+
+libspud.set_option("/system::Solid/coefficient::SlabAge/type/rank/value/constant", float(tslab)*1.e6*365*24*60*60)</string_value>
+            <single_build/>
+          </update>
+        </parameter>
+        <parameter name="tcrust">
+          <values>
+            <string_value lines="1">50.0</string_value>
+            <comment>Myr</comment>
+          </values>
+          <update>
+            <string_value lines="20" type="code" language="python">import libspud
+
+if float(tcrust) &lt;= 0.0:
+  import sys
+  print "ERROR: tcrust must be greater than 0!"
+  sys.exit(1)
+
+libspud.set_option("/system::Solid/coefficient::CrustAge/type/rank/value/constant", float(tcrust)*1.e6*365*24*60*60)</string_value>
+            <single_build/>
+          </update>
+        </parameter>
+        <parameter name="vslab">
+          <values>
+            <string_value lines="1">0.05</string_value>
+            <comment>m/yr</comment>
+          </values>
+          <update>
+            <string_value lines="20" type="code" language="python">import libspud
+from numpy import sin, pi
+
+if float(vslab) &lt;= 0.0:
+  import sys
+  print "ERROR: vslab must be greater than 0!"
+  sys.exit(1)
+
+if float(vslab) &lt; 300.*1.e3/sin(float(delta)*pi/180.)/(20.e6):
+  print "WARNING: vslab too slow for slab to reach bottom of domain in simulation runtime (20Myr)!"
+
+libspud.set_option("/system::Solid/coefficient::SolidVelocityScale/type/rank/value/constant", float(vslab)/365./24./60./60.)</string_value>
+            <single_build/>
+          </update>
+        </parameter>
+        <parameter name="mindx">
+          <values>
+            <string_value lines="1">3.0</string_value>
+            <comment>km</comment>
+          </values>
+          <update>
+            <string_value lines="20" type="code" language="python">import libspud
+
+libspud.set_option("/system::Fluid/coefficient::MinimumCompactionLength/type/rank/value/constant", float(mindx))</string_value>
+            <single_build/>
+          </update>
+        </parameter>
+        <parameter name="cpdepth">
+          <values>
+            <string_value lines="1">80.0</string_value>
+            <comment>km</comment>
+          </values>
+        </parameter>
+        <parameter name="fluxdepth">
+          <values>
+            <string_value lines="1">150.0</string_value>
+            <comment>km</comment>
+          </values>
+          <update>
+            <string_value lines="20" type="code" language="python">import libspud
+from math import sin, pi
+
+if float(fluxdepth) &lt; 40.0 or float(fluxdepth) &gt; 300.0:
+  import sys
+  print "ERROR: fluxdepth must be between 40.0 and 300.0 km!"
+  sys.exit(1)
+
+libspud.set_option("/system::Fluid/coefficient::FluxGaussianLocationAlongSlab/type/rank/value/constant", float(fluxdepth)/sin(pi*float(delta)/180.))
+
+libspud.set_option("/timestepping/finish_time", 50.*(float(fluxdepth)-40.0))
+libspud.set_option("/io/dump_periods/visualization_period", (float(fluxdepth)-40.0))</string_value>
+            <single_build/>
+          </update>
+        </parameter>
+        <parameter name="w0onv0">
+          <values>
+            <string_value lines="1">50.0</string_value>
+            <comment>dimensionless ratio</comment>
+          </values>
+          <update>
+            <string_value lines="20" type="code" language="python">import libspud
+
+libspud.set_option("/system::Fluid/coefficient::Mobility/type/rank/value/constant", float(w0onv0))</string_value>
+            <single_build/>
+          </update>
+        </parameter>
+      </parameter_sweep>
+      <dependencies>
+        <simulation name="Solid">
+          <input_file>
+            <string_value lines="1" type="filename">subduction/solid/subduction.tfml</string_value>
+          </input_file>
+          <run_when name="input_changed_or_output_missing"/>
+          <parameter_sweep>
+            <parameter name="delta">
+              <update>
+                <string_value lines="20" type="code" language="python">import libspud
+from string import Template as template
+
+if float(delta) &lt; 0.0 or float(delta) &gt; 90.0:
+  import sys
+  print "ERROR: delta must be between 0 and 90 degrees!"
+  sys.exit(1)
+
+globalpython = libspud.get_option("/global_parameters/python")
+libspud.set_option("/global_parameters/python", template(globalpython).safe_substitute({"delta":delta}))</string_value>
+                <single_build/>
+              </update>
+            </parameter>
+            <parameter name="tslab">
+              <update>
+                <string_value lines="20" type="code" language="python">import libspud
+
+if float(tslab) &lt;= 0.0:
+  import sys
+  print "ERROR: tslab must be greater than 0!"
+  sys.exit(1)
+
+libspud.set_option("/system::Solid/coefficient::SlabAge/type/rank/value/constant", float(tslab)*1.e6*365*24*60*60)</string_value>
+                <single_build/>
+              </update>
+            </parameter>
+            <parameter name="tcrust">
+              <update>
+                <string_value lines="20" type="code" language="python">import libspud
+
+if float(tcrust) &lt;= 0.0:
+  import sys
+  print "ERROR: tcrust must be greater than 0!"
+  sys.exit(1)
+
+libspud.set_option("/system::Solid/coefficient::CrustAge/type/rank/value/constant", float(tcrust)*1.e6*365*24*60*60)</string_value>
+                <single_build/>
+              </update>
+            </parameter>
+            <parameter name="vslab">
+              <update>
+                <string_value lines="20" type="code" language="python">import libspud
+from numpy import sin, pi
+
+if float(vslab) &lt;= 0.0:
+  import sys
+  print "ERROR: vslab must be greater than 0!"
+  sys.exit(1)
+
+if float(vslab) &lt; 300.*1.e3/sin(float(delta)*pi/180.)/(20.e6):
+  print "WARNING: vslab too slow for slab to reach bottom of domain in simulation runtime (20Myr)!"
+
+libspud.set_option("/system::Solid/coefficient::SolidVelocityScale/type/rank/value/constant", float(vslab)/365./24./60./60.)
+libspud.set_option("/timestepping/finish_time", 20.e6*float(vslab)/1000.) # run for 20 Myr
+libspud.set_option("/io/dump_periods/visualization_period", 1.e6*float(vslab)/1000.) # dump every 1 Myr
+libspud.set_option("/timestepping/timestep/adaptive/adapt_period", 20.e6*float(vslab)/1000.)
+libspud.set_option("/io/checkpointing/checkpoint_period", 5.e6*float(vslab)/1000.) # checkpoint every 5Ma</string_value>
+                <single_build/>
+              </update>
+            </parameter>
+            <parameter name="mindx"/>
+            <parameter name="cpdepth">
+              <update>
+                <string_value lines="20" type="code" language="python">import libspud
+from string import Template as template
+
+if float(cpdepth) &lt; 41.0 or float(cpdepth) &gt; 299.0:
+  import sys
+  print "ERROR: cpdepth must be between 41 and 299 km!"
+  sys.exit(1)
+
+globalpython = libspud.get_option("/global_parameters/python")
+libspud.set_option("/global_parameters/python", template(globalpython).safe_substitute({"cpdepth":cpdepth}))</string_value>
+                <single_build/>
+              </update>
+            </parameter>
+          </parameter_sweep>
+          <required_output>
+            <filenames name="checkpoints">
+              <string>
+                <string_value lines="1" type="filename">subduction_solid_Solid_3.xml</string_value>
+              </string>
+            </filenames>
+          </required_output>
+          <dependencies>
+            <run name="Mesh">
+              <input_file>
+                <string_value lines="1" type="filename">subduction/subduction.geo</string_value>
+              </input_file>
+              <run_when name="input_changed_or_output_missing"/>
+              <parameter_sweep>
+                <parameter name="delta">
+                  <update>
+                    <string_value lines="20" type="code" language="python">from string import Template as template
+
+input_file = template(input_file).safe_substitute({"delta":delta})</string_value>
+                  </update>
+                </parameter>
+                <parameter name="mindx">
+                  <update>
+                    <string_value lines="20" type="code" language="python">from string import Template as template
+
+input_file = template(input_file).safe_substitute({"mindx":mindx})</string_value>
+                  </update>
+                </parameter>
+                <parameter name="cpdepth">
+                  <update>
+                    <string_value lines="20" type="code" language="python">from string import Template as template
+
+input_file = template(input_file).safe_substitute({"cpdepth":cpdepth})</string_value>
+                  </update>
+                </parameter>
+              </parameter_sweep>
+              <required_output>
+                <filenames name="Mesh">
+                  <string>
+                    <string_value lines="1" type="filename">subduction.xml.gz subduction_submesh.xml.gz</string_value>
+                  </string>
+                </filenames>
+              </required_output>
+              <commands>
+                <command name="GMsh">
+                  <string_value lines="1">gmsh -2 -algo del2d subduction.geo</string_value>
+                </command>
+                <command name="Convert">
+                  <string_value lines="1">dolfin-convert subduction.msh subduction.xml</string_value>
+                </command>
+                <command name="GZip">
+                  <string_value lines="1">gzip subduction.xml</string_value>
+                </command>
+                <command name="SubMesh">
+                  <string_value lines="1">extract_submesh -r 2 -- subduction.xml.gz</string_value>
+                </command>
+              </commands>
+            </run>
+          </dependencies>
+          <variables>
+            <variable name="vtudata">
+              <string_value lines="20" type="code" language="python">import buckettools.vtktools as vtktools
+import os
+from lxml import etree
+from buckettools.threadlibspud import *
+from matplotlib.tri import Triangulation
+
+def vtusinpvd(filename):
+  assert(filename[-4:]==".pvd")
+  dirname = os.path.dirname(filename)
+  tree = etree.parse(filename)
+  vtunames = [[element.attrib['timestep'], os.path.join(dirname, element.attrib['file'])] for element in tree.getroot().iterdescendants(tag="DataSet")]
+  sortedvtunames = sorted(vtunames, key=lambda entry: float(entry[0]))
+  return sortedvtunames
+
+filename = os.path.split(input_filename)[-1]
+threadlibspud.load_options(filename)
+basename = libspud.get_option("/io/output_base_name")
+T0 = libspud.get_option("/system::Solid/coefficient::BackgroundTemperature/type/rank/value/constant")
+Ts = libspud.get_option("/system::Solid/coefficient::SurfaceTemperature/type/rank/value/constant")
+threadlibspud.clear_options()
+vtufilenames = vtusinpvd(basename+".pvd")
+
+vtu = vtktools.vtu(vtufilenames[-1][-1])
+
+vtulocations = vtu.GetLocations()
+triangles = []
+for c in xrange(vtu.ugrid.GetNumberOfCells()):
+  points = vtu.GetCellPoints(c)
+  triangles.append(points)
+triang = Triangulation(vtulocations[:,0], vtulocations[:,1], triangles)
+
+T = []
+v = []
+t = []
+for vtufilename in vtufilenames:
+  vtu = vtktools.vtu(vtufilename[-1])
+  T.append(vtu.GetScalarField("Solid::Temperature")*(T0-Ts))
+  v.append(vtu.GetField("Solid::Velocity"))
+  t.append(vtufilename[0])
+
+vtudata = [triang, vtulocations, T, v, T0-Ts, t]</string_value>
+            </variable>
+            <variable name="errfile">
+              <string_value lines="20" type="code" language="python">err = file("terraferma.err-0", 'r')
+errfile = [line for line in err.readlines() if not line.startswith("WARNING:")]</string_value>
+            </variable>
+            <variable name="det">
+              <string_value lines="20" type="code" language="python">from buckettools.statfile import parser
+import os
+from buckettools.threadlibspud import *
+
+filename = os.path.split(input_filename)[-1]
+threadlibspud.load_options(filename)
+basename = libspud.get_option("/io/output_base_name")
+threadlibspud.clear_options()
+det = parser(basename+".det")</string_value>
+            </variable>
+            <variable name="havedisplay">
+              <string_value lines="20" type="code" language="python">import os
+
+exitval = os.system('python -c "import matplotlib.pyplot as plt; plt.figure()"')
+havedisplay = (exitval == 0) and "DISPLAY" in os.environ</string_value>
+            </variable>
+          </variables>
+        </simulation>
+      </dependencies>
+      <variables>
+        <variable name="fluiderrfile">
+          <string_value lines="20" type="code" language="python">err = file("terraferma.err-0", 'r')
+fluiderrfile = [line for line in err.readlines() if not line.startswith("WARNING:")]</string_value>
+        </variable>
+        <variable name="fluidvtudata">
+          <string_value lines="20" type="code" language="python">import buckettools.vtktools as vtktools
+import os
+from lxml import etree
+from buckettools.threadlibspud import *
+from matplotlib.tri import Triangulation
+
+def vtusinpvd(filename):
+  assert(filename[-4:]==".pvd")
+  dirname = os.path.dirname(filename)
+  tree = etree.parse(filename)
+  vtunames = [[element.attrib['timestep'], os.path.join(dirname, element.attrib['file'])] for element in tree.getroot().iterdescendants(tag="DataSet")]
+  sortedvtunames = sorted(vtunames, key=lambda entry: float(entry[0]))
+  return sortedvtunames
+
+filename = os.path.split(input_filename)[-1]
+threadlibspud.load_options(filename)
+basename = libspud.get_option("/io/output_base_name")
+threadlibspud.clear_options()
+vtufilenames = vtusinpvd(basename+"_SubMesh.pvd")
+
+vtu = vtktools.vtu(vtufilenames[-1][-1])
+
+vtulocations = vtu.GetLocations()
+triangles = []
+for c in xrange(vtu.ugrid.GetNumberOfCells()):
+  points = vtu.GetCellPoints(c)
+  triangles.append(points)
+triang = Triangulation(vtulocations[:,0], vtulocations[:,1], triangles)
+
+phi = []
+q = []
+t = []
+for vtufilename in vtufilenames:
+  vtu = vtktools.vtu(vtufilename[-1])
+  phi.append(vtu.GetScalarField("Fluid::Porosity"))
+  q.append(vtu.GetField("Velocity::FluidFlux"))
+  t.append(vtufilename[0])
+
+fluidvtudata = [triang, vtulocations, phi, q, t]</string_value>
+        </variable>
+        <variable name="fluidelapsedwalltime">
+          <string_value lines="20" type="code" language="python">from buckettools.statfile import parser
+import os
+from buckettools.threadlibspud import *
+
+filename = os.path.split(input_filename)[-1]
+threadlibspud.load_options(filename)
+basename = libspud.get_option("/io/output_base_name")
+threadlibspud.clear_options()
+fluidelapsedwalltime = parser(basename+".stat")["ElapsedWallTime"]["value"][-1]</string_value>
+        </variable>
+      </variables>
+    </simulation>
+  </simulations>
+  <tests>
+    <test name="errors">
+      <string_value lines="20" type="code" language="python">noerrors = True
+for delta in errfile.parameters['delta']:
+  for tslab in errfile.parameters['tslab']:
+    for tcrust in errfile.parameters['tcrust']:
+      for vslab in errfile.parameters['vslab']:
+        for mindx in errfile.parameters['mindx']:
+          for cpdepth in errfile.parameters['cpdepth']:
+            for fluxdepth in errfile.parameters['fluxdepth']:
+              for w0onv0 in errfile.parameters['w0onv0']:
+                index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab, 'mindx': mindx, 'cpdepth':cpdepth, 'fluxdepth':fluxdepth, 'w0onv0':w0onv0}
+                if len(errfile[index]) &gt; 0:
+                  print "ERROR: delta = {}, tslab = {}, tcrust = {}, vslab = {}, mindx = {}, cpdepth = {} solid produced an unexpected error!".format(delta, tslab, tcrust, vslab, mindx, cpdepth)
+                  noerrors = False
+
+assert(noerrors)</string_value>
+    </test>
+    <test name="fluiderrors">
+      <string_value lines="20" type="code" language="python">noerrors = True
+for delta in fluiderrfile.parameters['delta']:
+  for tslab in fluiderrfile.parameters['tslab']:
+    for tcrust in fluiderrfile.parameters['tcrust']:
+      for vslab in fluiderrfile.parameters['vslab']:
+        for mindx in fluiderrfile.parameters['mindx']:
+          for cpdepth in fluiderrfile.parameters['cpdepth']:
+            for fluxdepth in fluiderrfile.parameters['fluxdepth']:
+              for w0onv0 in fluiderrfile.parameters['w0onv0']:
+                index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab, 'mindx': mindx, 'cpdepth':cpdepth, 'fluxdepth':fluxdepth, 'w0onv0':w0onv0}
+                if len(errfile[index]) &gt; 0:
+                  print "ERROR: delta = {}, tslab = {}, tcrust = {}, vslab = {}, mindx = {}, cpdepth = {}, fluxdepth = {}, w0onv0 = {} fluid produced an unexpected error!".format(delta, tslab, tcrust, vslab, mindx, cpdepth, fluxdepth, w0onv0)
+                  noerrors = False
+
+assert(noerrors)</string_value>
+    </test>
+    <test name="elapsedwalltime">
+      <string_value lines="20" type="code" language="python">print "solid elapsed simulation wall time:"
+for delta in det.parameters['delta']:
+  for tslab in det.parameters['tslab']:
+    for tcrust in det.parameters['tcrust']:
+      for vslab in det.parameters['vslab']:
+        for mindx in det.parameters['mindx']:
+          for cpdepth in det.parameters['cpdepth']:
+            for fluxdepth in det.parameters['fluxdepth']:
+              for w0onv0 in det.parameters['w0onv0']:
+                index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab, 'mindx': mindx, 'cpdepth':cpdepth, 'fluxdepth':fluxdepth, 'w0onv0':w0onv0}
+                print "  {} minutes (delta = {} degrees, tslab = {} Myr, tcrust = {} Myr, vslab = {} m/yr, mindx = {} km, cpdepth = {} km)".format(det[index]["ElapsedWallTime"]["value"][-1]/60.0, delta, tslab, tcrust, vslab, mindx, cpdepth)</string_value>
+    </test>
+    <test name="fluidelapsedwalltime">
+      <string_value lines="20" type="code" language="python">print "fluid elapsed simulation wall time:"
+for delta in fluidelapsedwalltime.parameters['delta']:
+  for tslab in fluidelapsedwalltime.parameters['tslab']:
+    for tcrust in fluidelapsedwalltime.parameters['tcrust']:
+      for vslab in fluidelapsedwalltime.parameters['vslab']:
+        for mindx in fluidelapsedwalltime.parameters['mindx']:
+          for cpdepth in fluidelapsedwalltime.parameters['cpdepth']:
+            for fluxdepth in fluidelapsedwalltime.parameters['fluxdepth']:
+              for w0onv0 in fluidelapsedwalltime.parameters['w0onv0']:
+                index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab, 'mindx': mindx, 'cpdepth':cpdepth, 'fluxdepth':fluxdepth, 'w0onv0':w0onv0}
+                print "  {} minutes (delta = {} degrees, tslab = {} Myr, tcrust = {} Myr, vslab = {} m/yr, mindx = {} km, cpdepth = {} km, fluxdepth = {} km, w0onv0 = {})".format(fluidelapsedwalltime[index]/60.0, delta, tslab, tcrust, vslab, mindx, cpdepth, fluxdepth, w0onv0)</string_value>
+    </test>
+    <test name="animate">
+      <string_value lines="20" type="code" language="python">import matplotlib
+if havedisplay[0][0][0][0][0][0]:
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import matplotlib.colors as colors
+import numpy as np
+import os
+
+phimin = 1.e-5
+phimax = 0.5
+
+anis = []
+def animate(i):
+  phi = np.clip(fluidvtudata[index][2][i]*(0.0066/(float(w0onv0)*float(vslab))), phimin, phimax)
+  flux = fluidvtudata[index][3][i]*0.0066
+  t = fluidvtudata[index][4][i]
+  p.set_array(phi)
+  q.set_UVC(flux[:,0][::stride], flux[:,1][::stride])
+  text.set_text(r"{:3.0f} kyr".format(float(t)*1000/(float(vslab)*float(w0onv0))/1.e3))
+  return p, q, text,
+
+e = 50.0
+for delta in vtudata.parameters['delta']:
+  t = 300.
+  tx = t/np.tan(float(delta)*np.pi/180.)
+  for tslab in vtudata.parameters['tslab']:
+    for tcrust in vtudata.parameters['tcrust']:
+      for vslab in vtudata.parameters['vslab']:
+        for mindx in vtudata.parameters['mindx']:
+          for cpdepth in vtudata.parameters['cpdepth']:
+            for fluxdepth in vtudata.parameters['fluxdepth']:
+              for w0onv0 in vtudata.parameters['w0onv0']:
+                index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab, 'mindx': mindx, 'cpdepth':cpdepth, 'fluxdepth':fluxdepth, 'w0onv0':w0onv0}
+                triangT = vtudata[index][0]
+                xT = vtudata[index][1]
+                T = vtudata[index][2][-1]
+                triang = fluidvtudata[index][0]
+                x = fluidvtudata[index][1]
+                phi = np.clip(fluidvtudata[index][2][0]*(0.0066/(float(w0onv0)*float(vslab))), phimin, phimax)
+                flux = fluidvtudata[index][3][0]*0.0066
+                ts = fluidvtudata[index][4]
+                figa = plt.figure()
+                col = colors.LogNorm(vmin=phimin, vmax=phimax, clip=True)
+                p = plt.tripcolor(triang, phi, norm=col, shading='gouraud', cmap='gist_rainbow')
+                cbar = plt.colorbar()
+                cbar.ax.set_ylabel(r'porosity (assuming total flux = 6.6 m/kyr)')
+                stride = max(len(flux[:,0])/500, 1)
+                q = plt.quiver(x[:,0][::stride], x[:,1][::stride], flux[:,0][::stride], flux[:,1][::stride], width=2, units='x', scale_units='x', scale=0.0000002/(0.0066), color='k', edgecolor='w')
+                plt.quiverkey(q, 0.9, 0.9, 0.001, "6.6 m/Myr", labelpos='S', coordinates='figure', color='k')
+                cT = plt.tricontour(triangT, T, levels=np.arange(200,1300,200), cmap='coolwarm', linewidths=2)
+                plt.clabel(cT, inline=1, fontsize=11, colors='k', fmt='%1.0f')
+                plt.gca().add_artist(plt.Rectangle([0.0,-t], tx+e, t, color='k', linewidth=2, fill=False))
+                plt.gca().set_xlim([0, tx+e])
+                plt.gca().set_ylim([-tx, 0])
+                plt.gca().set_aspect('equal', 'datalim')
+                xlim = plt.gca().get_xlim()
+                ylim = plt.gca().get_ylim()
+                plt.xlabel(r'x ($km$)')
+                plt.ylabel(r'y ($km$)')
+                plt.title(r'porosity and fluid flux (delta = {}, tslab = {}, tcrust = {}, vslab = {}, mindx = {}, cpdepth = {}, fluxdepth = {}, w0onv0 = {})'.format(delta, tslab, tcrust, vslab, mindx, cpdepth, fluxdepth, w0onv0), y=1.05)
+                text = plt.text(xlim[-1], ylim[-1], r"{:3.0f} kyr".format(float(ts[0])*1000/(float(vslab)*float(w0onv0))/1.e3), horizontalalignment='right', verticalalignment='bottom')
+                ani = animation.FuncAnimation(figa, animate, range(len(ts)), interval=200, blit=False)
+                if havedisplay[0][0][0][0][0][0][0][0]: plt.show()</string_value>
+    </test>
+    <test name="plot">
+      <string_value lines="20" type="code" language="python">import matplotlib
+if havedisplay[0][0][0][0][0][0]:
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import matplotlib.colors as colors
+import numpy as np
+import os
+
+phimin = 1.e-5
+phimax = 0.5
+
+e = 50.0
+for delta in vtudata.parameters['delta']:
+  t = 300.
+  tx = t/np.tan(float(delta)*np.pi/180.)
+  for tslab in vtudata.parameters['tslab']:
+    for tcrust in vtudata.parameters['tcrust']:
+      for vslab in vtudata.parameters['vslab']:
+        for mindx in vtudata.parameters['mindx']:
+          for cpdepth in vtudata.parameters['cpdepth']:
+            for fluxdepth in vtudata.parameters['fluxdepth']:
+              for w0onv0 in vtudata.parameters['w0onv0']:
+                index = {'delta':delta, 'tslab':tslab, 'tcrust':tcrust, 'vslab':vslab, 'mindx': mindx, 'cpdepth':cpdepth, 'fluxdepth':fluxdepth, 'w0onv0':w0onv0}
+                triangT = vtudata[index][0]
+                xT = vtudata[index][1]
+                T = vtudata[index][2][-1]
+                triang = fluidvtudata[index][0]
+                x = fluidvtudata[index][1]
+                ts = fluidvtudata[index][4]
+                phi = np.clip(fluidvtudata[index][2][0]*(0.0066/(float(w0onv0)*float(vslab))), phimin, phimax)
+                flux = fluidvtudata[index][3][0]*0.0066
+                for i in xrange(1, len(ts)):
+                  deltat = float(ts[i])-float(ts[i-1])
+                  phi += np.clip(fluidvtudata[index][2][i]*(0.0066/(float(w0onv0)*float(vslab))), phimin, phimax)*deltat
+                  flux += fluidvtudata[index][3][i]*0.0066*deltat
+                phi = phi/float(ts[-1])
+                flux = flux/float(ts[-1])
+                figa = plt.figure()
+                col = colors.LogNorm(vmin=phimin, vmax=phimax, clip=True)
+                p = plt.tripcolor(triang, phi, norm=col, shading='gouraud', cmap='gist_rainbow')
+                cbar = plt.colorbar()
+                cbar.ax.set_ylabel(r'porosity (assuming total flux = 6.6 m/kyr)')
+                stride = max(len(flux[:,0])/500, 1)
+                q = plt.quiver(x[:,0][::stride], x[:,1][::stride], flux[:,0][::stride], flux[:,1][::stride], width=2, units='x', scale_units='x', scale=0.0000002/(0.0066), color='k', edgecolor='w')
+                plt.quiverkey(q, 0.9, 0.9, 0.001, "6.6 m/Myr", labelpos='S', coordinates='figure', color='k')
+                cT = plt.tricontour(triangT, T, levels=np.arange(200,1300,200), cmap='coolwarm', linewidths=2)
+                plt.clabel(cT, inline=1, fontsize=11, colors='k', fmt='%1.0f')
+                plt.gca().add_artist(plt.Rectangle([0.0,-t], tx+e, t, color='k', linewidth=2, fill=False))
+                plt.gca().set_xlim([0, tx+e])
+                plt.gca().set_ylim([-tx, 0])
+                plt.gca().set_aspect('equal', 'datalim')
+                xlim = plt.gca().get_xlim()
+                ylim = plt.gca().get_ylim()
+                plt.xlabel(r'x ($km$)')
+                plt.ylabel(r'y ($km$)')
+                plt.title(r'time-averaged porosity and fluid flux (delta = {}, tslab = {}, tcrust = {}, vslab = {}, mindx = {}, cpdepth = {}, fluxdepth = {}, w0onv0 = {})'.format(delta, tslab, tcrust, vslab, mindx, cpdepth, fluxdepth, w0onv0), y=1.05)</string_value>
+    </test>
+    <test name="display">
+      <string_value lines="20" type="code" language="python">import matplotlib
+if havedisplay[0][0][0][0][0][0][0][0]:
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import os
+
+if havedisplay[0][0][0][0][0][0][0][0]: plt.show()</string_value>
+    </test>
+  </tests>
+</harness_options>
