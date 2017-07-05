@@ -187,7 +187,36 @@ for dmu in vtudata.parameters['dmu']:
     plt.xlabel('x')
     plt.ylabel('y')
     plt.title('velocity (dmu = {}, ncells = {})'.format(dmu, ncells), y=1.05)
-    fig.savefig("driven_cavity_freeslip_dmu_{}_ncells_{}.png".format(dmu, ncells))
+    fig.savefig("driven_cavity_freeslip_dmu_{}_ncells_{}.png".format(dmu, ncells))</string_value>
+    </test>
+    <test name="convergence">
+      <string_value lines="20" type="code" language="python">import matplotlib
+if havedisplay[0][0]: 
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+
+if len(rmsvelocities.parameters["ncells"]) &gt; 1:
+  for dmu in rmsvelocities.parameters["dmu"]:
+      index = {'dmu':dmu}
+      ncells = [int(nc) for nc in rmsvelocities.parameters["ncells"]]
+      fig1 = plt.figure()
+      plt.plot(ncells, np.asarray(rmsvelocities[index])[:,0])
+      plt.xlabel('ncells')
+      plt.ylabel('RMS velocity')
+      plt.title('RMS velocity (dmu = {})'.format(dmu,), y=1.05)</string_value>
+    </test>
+    <test name="display">
+      <string_value lines="20" type="code" language="python">import matplotlib
+if havedisplay[0][0]: 
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import os
 
 if havedisplay[0][0]: plt.show()</string_value>
     </test>
