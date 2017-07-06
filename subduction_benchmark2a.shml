@@ -171,7 +171,7 @@ for mindx in vtudata.parameters['mindx']:
   plt.quiver(x[:,0][::stride], x[:,1][::stride], vs0[::stride], vs1[::stride], width=2, units='x', scale_units='x', scale=0.002/float(vslab), color='w', edgecolor='w')
   plt.gca().set_xlim([0, tx+e])
   plt.gca().set_ylim([-tx, 0])
-  plt.gca().set_aspect('equal', 'datalim')
+  plt.axis('equal')
   plt.xlabel(r'x ($km$)')
   plt.ylabel(r'y ($km$)')
   plt.title(r'temperature ($^\circ C$) and velocity (mindx = {})'.format(mindx), y=1.05)
