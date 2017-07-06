@@ -224,6 +224,42 @@ for mindx in det.parameters['mindx']:
   
 print "  852.89 degrees C (benchmark UM)"</string_value>
     </test>
+    <test name="plotconvergence">
+      <string_value lines="20" type="code" language="python">import matplotlib
+if havedisplay[0]: 
+  matplotlib.use('GTKAgg')
+else:
+  matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+
+bm1111  = 388.24
+bmslab  = 503.77
+bmwedge = 852.89
+
+def Tplot(x, y, bmvalue, ylabel, title):
+  fig = plt.figure()
+  plt.plot(x, y, linewidth=2)
+  plt.plot([min(x), max(x)], [bmvalue, bmvalue], 'k--', linewidth=2)
+  plt.gca().text(max(x), bmvalue, r"benchmark (UM)", ha='right', va='bottom')
+  plt.gca().set_xlim([min(x), max(x)])
+  plt.gca().set_ylim([min(min(y)-1, bmvalue-5), max(max(y)+1, bmvalue+5)])
+  plt.xlabel(r"mindx")
+  plt.ylabel(r"%s"%(ylabel))
+  plt.title(r"%s"%title, y=1.05)
+  fig.savefig("subduction_benchmark1a_convergence_%s.png"%(ylabel))
+
+if len(det.parameters["mindx"]) &gt; 1:
+  mindx = [float(mdx) for mdx in det.parameters["mindx"]]
+  T1111 = [det[{"mindx":mdx}]["Solid"]["Temperature"]["SlabPoint"][0,-1]*vtudata[{"mindx":mdx}][4] for mdx in det.parameters["mindx"]]
+  Tslab = [(sum((det[{"mindx":mdx}]["Solid"]["Temperature"]["Slab"][:,-1]*vtudata[{"mindx":mdx}][4])**2)/36)**0.5 for mdx in det.parameters["mindx"]]
+  Twedge = [(sum((det[{"mindx":mdx}]["Solid"]["Temperature"]["Wedge"][:,-1]*vtudata[{"mindx":mdx}][4])**2)/78)**0.5 for mdx in det.parameters["mindx"]]
+  Tplot(mindx, T1111, bm1111, "T_{11,11}", "Slab temperature at 60 km depth")
+  Tplot(mindx, Tslab, bmslab, "T_{slab}", "Integrated slab temperature")
+  Tplot(mindx, Twedge, bmwedge, "T_{wedge}", "Integrated wedge temperature")
+</string_value>
+    </test>
     <test name="display">
       <string_value lines="20" type="code" language="python">import matplotlib
 if havedisplay[0]: 
