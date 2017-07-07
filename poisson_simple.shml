@@ -164,8 +164,7 @@ for f in vtudata.parameters['f']:
       plt.ylabel('y')
       plt.title('temperature distribution (f = {}, k = {}, ncells = {})'.format(f, k, ncells), y=1.05)
       cbar = plt.colorbar(ticks = np.linspace(min(vtudata[index][1]), max(vtudata[index][1]), 5))
-      fig.savefig("poisson_simple_f_{}_k_{}_ncells_{}.png".format(f, k, ncells))
-</string_value>
+      fig.savefig("poisson_simple_f_{}_k_{}_ncells_{}.png".format(f, k, ncells))</string_value>
     </test>
     <test name="pcolor">
       <string_value lines="20" type="code" language="python">import matplotlib
@@ -178,7 +177,7 @@ import matplotlib.colors as colors
 import numpy as np
 import os
 
-if len(ustats.parameters["f"]) &gt; 1 or len(ustats.parameters["k"]) &gt; 1:
+if len(ustats.parameters["f"]) &gt; 1 and len(ustats.parameters["k"]) &gt; 1:
   for ncells in ustats.parameters["ncells"]:
     index = {'ncells':ncells}
     fs = [float(f) for f in ustats.parameters["f"]]
